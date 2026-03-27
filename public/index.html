@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Могилев сквозь время</title>
+    <style>
+        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f5f0e6; }
+        h1 { color: #6b5e3a; }
+        button { background: #6b5e3a; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer; margin: 10px; }
+        input { padding: 10px; margin: 5px; border-radius: 10px; border: 1px solid #ccc; width: 250px; }
+        .box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; }
+    </style>
+</head>
+<body>
+    <div class="box">
+        <h1>🏛️ Могилев сквозь время</h1>
+        <div id="loginDiv">
+            <h3>🔐 Вход</h3>
+            <input type="email" id="email" placeholder="Email"><br>
+            <input type="password" id="password" placeholder="Пароль"><br>
+            <button onclick="login()">Войти</button>
+            <p><b>admin@mogilev.by / admin2026</b></p>
+            <div id="msg"></div>
+        </div>
+        <div id="userDiv" style="display:none">
+            <h3>👤 <span id="userName"></span></h3>
+            <button onclick="loadPlaces()">📋 Места</button>
+            <button onclick="logout()">🚪 Выйти</button>
+        </div>
+        <div id="placesDiv" style="display:none">
+            <h3>📜 Места</h3>
+            <div id="placesList"></div>
+            <button onclick="back()">← Назад</button>
+        </div>
+    </div>
+    <script>
+        let token = localStorage.getItem('token');
+        if(token) checkAuth();
+        
+        async function login() {
+            let res = await fetch('/api/login', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({email:email.value, password:password.value})
+            });
+            let data = await res.json();
+            if(data.token){
+                localStorage.setItem('token', data.token);
+                msg.innerHTML = '✅';
+                checkAuth();
+            } else { msg.innerHTML = '❌'; }
+        }
+        
+        async function checkAuth(){
+            let res = await fetch('/api/me', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
+            let data = await res.json();
+            if(data.user){
+                loginDiv.style.display = 'none';
+                userDiv.style.display = 'block';
+                userName.textContent = data.user.name;
+            }
+        }
+        
+        async function loadPlaces(){
+            let res = await fetch('/api/places');
+            let places = await res.json();
+            userDiv.style.display = 'none';Ь
+            placesDiv.style.display = 'block';
+            placesList.innerHTML = places.map(p => `<div style="background:#f5f0e6; margin:10px; padding:10px; border-radius:10px"><b>${p.name}</b><br>📍 ${p.address}<br>📅 ${p.year}</div>`).join('');
+        }
+        
+        function back(){ placesDiv.style.display='none'; userDiv.style.display='block'; }
+        function logout(){ localStorage.removeItem('token'); location.reload(); }
+    </script>
+</body>
+</html>ьь
