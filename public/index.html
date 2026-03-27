@@ -1,76 +1,992 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Могилев сквозь время</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>Могилев сквозь время | Историческое наследие</title>
     <style>
-        body { font-family: sans-serif; text-align: center; padding: 50px; background: #f5f0e6; }
-        h1 { color: #6b5e3a; }
-        button { background: #6b5e3a; color: white; padding: 10px 20px; border: none; border-radius: 25px; cursor: pointer; margin: 10px; }
-        input { padding: 10px; margin: 5px; border-radius: 10px; border: 1px solid #ccc; width: 250px; }
-        .box { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #f5f0e6 0%, #e8e0d5 100%);
+            min-height: 100vh;
+            color: #4a3b2c;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6b5e3a 0%, #5a4e2e 100%);
+            color: white;
+            padding: 20px 16px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 { font-size: 1.5em; margin-bottom: 5px; }
+        .header p { font-size: 0.8em; opacity: 0.9; }
+
+        .user-bar {
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 1px solid rgba(107, 94, 58, 0.2);
+        }
+
+        .user-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        .user-avatar {
+            width: 40px; height: 40px;
+            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .user-details { min-width: 140px; }
+        .user-name { font-weight: bold; color: #6b5e3a; font-size: 0.9em; }
+        .user-email { font-size: 0.65em; color: #999; word-break: break-all; }
+        .login-btn, .logout-btn, .register-btn {
+            background: #6b5e3a; color: white; border: none;
+            padding: 8px 16px; border-radius: 25px; cursor: pointer;
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+        .logout-btn { background: #d9534f; }
+        .register-btn { background: #2c3e2f; }
+        .admin-btn-header {
+            background: #2c3e2f; color: white; border: none;
+            padding: 8px 16px; border-radius: 25px; cursor: pointer;
+            font-size: 0.8em;
+            white-space: nowrap;
+        }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .nav-bar {
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid rgba(107, 94, 58, 0.1);
+            position: sticky;
+            top: 70px;
+            z-index: 99;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #6b5e3a;
+            font-weight: 500;
+            padding: 8px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        .nav-link.active { background: #6b5e3a; color: white; }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px 16px;
+            min-height: calc(100vh - 280px);
+        }
+
+        .places-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .place-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: transform 0.2s;
+        }
+        .place-card:hover { transform: translateY(-3px); }
+
+        .place-card-header {
+            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
+            color: white;
+            padding: 14px;
+        }
+        .place-card-header h3 { font-size: 1.1em; margin-bottom: 4px; }
+        .place-card-header p { font-size: 0.7em; opacity: 0.9; }
+
+        .comparison-container {
+            position: relative;
+            height: 200px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+        .comparison-img {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.3s ease;
+        }
+        .old-img { z-index: 1; }
+        .new-img {
+            z-index: 2;
+            width: 50%;
+            border-right: 3px solid #ffc107;
+        }
+        .comparison-container:hover .new-img { width: 100%; }
+
+        .img-label {
+            position: absolute;
+            bottom: 8px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.6em;
+            z-index: 3;
+            pointer-events: none;
+        }
+        .label-old { left: 8px; background: #6b5e3a; }
+        .label-new { right: 8px; background: #ffc107; color: #4a3b2c; }
+
+        .place-card-info { padding: 14px; }
+        .place-card-info p {
+            font-size: 0.85em;
+            color: #5a4e3a;
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+        .card-buttons { display: flex; gap: 10px; }
+        .card-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.75em;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+        }
+        .btn-map { background: #e8e0d5; color: #6b5e3a; }
+        .btn-detail { background: linear-gradient(135deg, #6b5e3a, #7d6e46); color: white; }
+
+        .map-section {
+            background: white;
+            border-radius: 20px;
+            padding: 16px;
+            margin: 20px 0;
+            position: relative;
+            z-index: 1;
+        }
+        .map-title { font-size: 1.2em; color: #6b5e3a; margin-bottom: 12px; text-align: center; }
+        .map-container { height: 400px; border-radius: 16px; overflow: hidden; position: relative; z-index: 1; }
+        #map { width: 100%; height: 100%; z-index: 1; }
+
+        .detail-page {
+            background: white;
+            border-radius: 24px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .detail-header {
+            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
+            color: white;
+            padding: 20px;
+        }
+        .detail-header h2 { font-size: 1.4em; margin-bottom: 8px; }
+        .detail-images {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background: #e8e0d5;
+        }
+        .detail-images img { width: 100%; height: 220px; object-fit: cover; }
+        .detail-content { padding: 20px; }
+        .detail-content h3 { color: #6b5e3a; margin: 15px 0 8px; }
+        .detail-content p { line-height: 1.6; color: #5a4e3a; }
+
+        .back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: white;
+            border: none;
+            color: #6b5e3a;
+            font-size: 0.9em;
+            cursor: pointer;
+            margin-bottom: 15px;
+            padding: 8px 20px;
+            border-radius: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .comments-section {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .comments-title { font-size: 1.2em; color: #6b5e3a; margin-bottom: 20px; }
+        .comment-form {
+            background: #faf6ed;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .comment-form textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e8dbbc;
+            border-radius: 12px;
+            font-family: inherit;
+            resize: vertical;
+            margin-bottom: 12px;
+        }
+        .comment-submit {
+            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 25px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .comments-list { display: flex; flex-direction: column; gap: 15px; max-height: 500px; overflow-y: auto; }
+        .comment-item {
+            background: #faf6ed;
+            border-radius: 16px;
+            padding: 12px;
+            border-left: 3px solid #6b5e3a;
+        }
+        .comment-header { display: flex; justify-content: space-between; flex-wrap: wrap; margin-bottom: 8px; }
+        .comment-author { font-weight: bold; color: #6b5e3a; }
+        .comment-text { color: #5a4e3a; margin: 8px 0; line-height: 1.4; }
+        .comment-date { font-size: 0.65em; color: #999; }
+        .comment-actions { display: flex; gap: 12px; margin-top: 8px; }
+        .comment-btn {
+            background: none; border: none; color: #6b5e3a;
+            font-size: 0.7em; cursor: pointer; padding: 4px 8px;
+        }
+        .delete-btn { color: #d9534f; }
+        .reply-form { margin-top: 10px; padding-left: 20px; display: none; }
+        .reply-form.active { display: block; }
+        .reply-form textarea {
+            width: 100%; padding: 8px; border: 1px solid #e8dbbc;
+            border-radius: 10px; margin-bottom: 8px;
+        }
+        .replies { margin-top: 12px; padding-left: 20px; border-left: 2px solid #e8dbbc; }
+        .reply-item { background: white; border-radius: 12px; padding: 10px; margin-top: 8px; }
+
+        .modal-map {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .modal-map.active { display: flex; }
+        .modal-map-content {
+            background: white;
+            border-radius: 24px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            padding: 20px;
+            text-align: center;
+        }
+        .modal-map-content h3 { color: #6b5e3a; margin-bottom: 15px; }
+        .modal-map-content img { width: 100%; border-radius: 12px; margin: 10px 0; max-height: 200px; object-fit: cover; }
+        .modal-close-btn {
+            background: #6b5e3a; color: white; border: none;
+            padding: 10px; border-radius: 25px; width: 100%;
+            margin-top: 15px; cursor: pointer;
+        }
+
+        .footer {
+            background: #2c3e2f;
+            color: white;
+            padding: 30px 20px 20px;
+            margin-top: 40px;
+            position: relative;
+            z-index: 1;
+        }
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            text-align: center;
+        }
+        .footer-section h4 { color: #c4b28a; margin-bottom: 10px; }
+        .footer-section p { opacity: 0.8; font-size: 0.85em; }
+        .footer-bottom { text-align: center; padding-top: 20px; margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.75em; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal.active { display: flex; }
+        .modal-content {
+            background: white;
+            border-radius: 24px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        .modal-content input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e8dbbc;
+            border-radius: 12px;
+            margin: 10px 0;
+        }
+        .modal-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .modal-tab {
+            flex: 1;
+            padding: 8px;
+            background: #f0ebe2;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+        }
+        .modal-tab.active { background: #6b5e3a; color: white; }
+        .admin-panel {
+            background: linear-gradient(135deg, #2c3e2f, #1e2a1a);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            color: white;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .admin-form { display: grid; gap: 10px; }
+        .admin-form input, .admin-form select, .admin-form textarea {
+            padding: 8px; border-radius: 10px; border: none;
+        }
+        .admin-btn {
+            background: #c4b28a; color: #4a3b2c;
+            border: none; padding: 10px; border-radius: 10px; cursor: pointer;
+        }
+        .place-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px; border-radius: 10px;
+            margin-top: 8px; display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .place-item button {
+            background: #d9534f; color: white; border: none;
+            padding: 5px 12px; border-radius: 6px; cursor: pointer;
+        }
+        .admin-close-btn {
+            background: #c4b28a; color: #4a3b2c; border: none;
+            padding: 8px 16px; border-radius: 20px; cursor: pointer;
+            margin-top: 15px; width: 100%;
+        }
+
+        @media (max-width: 768px) {
+            .places-grid { grid-template-columns: 1fr; }
+            .detail-images { grid-template-columns: 1fr; }
+            .detail-images img { height: 180px; }
+            .map-container { height: 300px; }
+            .user-bar { flex-direction: column; align-items: stretch; }
+            .user-info { justify-content: center; }
+            .btn-group { justify-content: center; }
+            .nav-bar { top: 100px; }
+        }
     </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
 <body>
-    <div class="box">
+    <div class="header">
         <h1>🏛️ Могилев сквозь время</h1>
-        <div id="loginDiv">
-            <h3>🔐 Вход</h3>
-            <input type="email" id="email" placeholder="Email"><br>
-            <input type="password" id="password" placeholder="Пароль"><br>
-            <button onclick="login()">Войти</button>
-            <p><b>admin@mogilev.by / admin2026</b></p>
-            <div id="msg"></div>
+        <p>Исторические места | Фотографии | Отзывы</p>
+    </div>
+
+    <div class="user-bar">
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">👤</div>
+            <div class="user-details">
+                <div class="user-name" id="userName">Не авторизован</div>
+                <div class="user-email" id="userEmail"></div>
+            </div>
         </div>
-        <div id="userDiv" style="display:none">
-            <h3>👤 <span id="userName"></span></h3>
-            <button onclick="loadPlaces()">📋 Места</button>
-            <button onclick="logout()">🚪 Выйти</button>
-        </div>
-        <div id="placesDiv" style="display:none">
-            <h3>📜 Места</h3>
-            <div id="placesList"></div>
-            <button onclick="back()">← Назад</button>
+        <div class="btn-group">
+            <button class="login-btn" id="loginBtn">🔑 Войти</button>
+            <button class="register-btn" id="registerBtn">📝 Регистрация</button>
+            <button class="logout-btn" id="logoutBtn" style="display:none;">🚪 Выйти</button>
+            <button class="admin-btn-header" id="adminBtn" style="display:none;">👑 Админ</button>
         </div>
     </div>
+
+    <div class="nav-bar">
+        <a class="nav-link active" data-page="main">🏠 Главная</a>
+        <a class="nav-link" data-page="monuments">🏛️ Памятники</a>
+        <a class="nav-link" data-page="streets">🛣️ Улицы</a>
+        <a class="nav-link" data-page="buildings">🏠 Здания</a>
+    </div>
+
+    <div class="container" id="app"></div>
+
+    <div class="footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>🏛️ Могилев сквозь время</h4>
+                <p>Проект посвящен сохранению исторической памяти и архитектурному наследию города Могилева.</p>
+            </div>
+            <div class="footer-section">
+                <h4>📞 Контакты</h4>
+                <p>г. Могилев, Беларусь<br>museum@mogilev.by<br>+375 (222) 00-00-00</p>
+            </div>
+            <div class="footer-section">
+                <h4>📅 2024-2026</h4>
+                <p>Все права защищены<br>Исторический портал Могилева</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 Могилев сквозь время | История города в фотографиях и отзывах</p>
+        </div>
+    </div>
+
+    <div id="authModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-tabs">
+                <button class="modal-tab active" data-tab="login">🔐 Вход</button>
+                <button class="modal-tab" data-tab="register">📝 Регистрация</button>
+            </div>
+            <div id="loginForm">
+                <input type="email" id="loginEmail" placeholder="Email" autocomplete="off">
+                <input type="password" id="loginPassword" placeholder="Пароль">
+                <button class="comment-submit" id="submitLogin">Войти</button>
+            </div>
+            <div id="registerForm" style="display:none;">
+                <input type="text" id="regName" placeholder="Имя">
+                <input type="email" id="regEmail" placeholder="Email">
+                <input type="password" id="regPassword" placeholder="Пароль (минимум 6 символов)">
+                <input type="password" id="regConfirmPassword" placeholder="Подтвердите пароль">
+                <button class="comment-submit" id="submitRegister">Зарегистрироваться</button>
+            </div>
+            <button class="comment-submit" id="closeAuthModal" style="background:#ccc; margin-top:10px;">Отмена</button>
+        </div>
+    </div>
+
+    <div id="adminModal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <h3>👑 Админ-панель</h3>
+            <div id="adminPanel"></div>
+            <button class="comment-submit" id="closeAdmin" style="background:#ccc; margin-top:10px;">Закрыть</button>
+        </div>
+    </div>
+
+    <div id="mapModal" class="modal-map">
+        <div class="modal-map-content">
+            <h3 id="mapModalTitle">📍 Место на карте</h3>
+            <div id="mapModalInfo"></div>
+            <button class="modal-close-btn" onclick="closeMapModal()">Закрыть</button>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
-        let token = localStorage.getItem('token');
-        if(token) checkAuth();
-        
-        async function login() {
-            let res = await fetch('/api/login', {
-                method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({email:email.value, password:password.value})
-            });
-            let data = await res.json();
-            if(data.token){
-                localStorage.setItem('token', data.token);
-                msg.innerHTML = '✅';
-                checkAuth();
-            } else { msg.innerHTML = '❌'; }
+        // API конфигурация
+        const API_URL = '';
+        let authToken = localStorage.getItem('token');
+        let currentUser = null;
+        let placesData = [];
+        let reviews = [];
+        let map;
+        let currentPage = 'main';
+        let currentPlaceId = null;
+
+        async function apiRequest(url, options = {}) {
+            const headers = { 'Content-Type': 'application/json', ...options.headers };
+            if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+            const response = await fetch(`${API_URL}${url}`, { ...options, headers });
+            const data = await response.json();
+            if (response.status === 401) {
+                localStorage.removeItem('token');
+                authToken = null;
+                currentUser = null;
+                updateUserUI();
+                if (url !== '/api/me') showLoginModal();
+                return null;
+            }
+            return data;
         }
-        
-        async function checkAuth(){
-            let res = await fetch('/api/me', {headers:{'Authorization':'Bearer '+localStorage.getItem('token')}});
-            let data = await res.json();
-            if(data.user){
-                loginDiv.style.display = 'none';
-                userDiv.style.display = 'block';
-                userName.textContent = data.user.name;
+
+        async function register(email, password, name) {
+            if (password.length < 6) { alert('Пароль должен быть не менее 6 символов'); return false; }
+            const data = await apiRequest('/api/register', { method: 'POST', body: JSON.stringify({ email, password, name }) });
+            if (data && data.token) {
+                localStorage.setItem('token', data.token);
+                authToken = data.token;
+                currentUser = data.user;
+                updateUserUI();
+                return true;
+            } else if (data && data.error) alert(data.error);
+            return false;
+        }
+
+        async function login(email, password) {
+            const data = await apiRequest('/api/login', { method: 'POST', body: JSON.stringify({ email, password }) });
+            if (data && data.token) {
+                localStorage.setItem('token', data.token);
+                authToken = data.token;
+                currentUser = data.user;
+                updateUserUI();
+                return true;
+            } else if (data && data.error) alert(data.error);
+            return false;
+        }
+
+        async function logout() {
+            await apiRequest('/api/logout', { method: 'POST' });
+            localStorage.removeItem('token');
+            authToken = null;
+            currentUser = null;
+            updateUserUI();
+            renderCurrentPage();
+        }
+
+        async function loadPlaces() {
+            const data = await apiRequest('/api/places');
+            if (data && !data.error) { placesData = data; renderCurrentPage(); }
+        }
+
+        async function loadReviews() {
+            const data = await apiRequest('/api/reviews');
+            if (data && !data.error) { reviews = data; renderCurrentPage(); }
+        }
+
+        async function addComment(placeId, text) {
+            if (!currentUser) { showLoginModal(); return false; }
+            if (!text.trim()) { alert('Введите текст отзыва!'); return false; }
+            const data = await apiRequest('/api/reviews', { method: 'POST', body: JSON.stringify({ place_id: placeId, text }) });
+            if (data && data.id) { await loadReviews(); return true; }
+            return false;
+        }
+
+        async function addReply(parentId, text) {
+            if (!currentUser) { showLoginModal(); return false; }
+            if (!text.trim()) return false;
+            const data = await apiRequest('/api/reviews', { method: 'POST', body: JSON.stringify({ text, parent_id: parentId }) });
+            if (data && data.id) { await loadReviews(); return true; }
+            return false;
+        }
+
+        async function editComment(id, newText) {
+            const data = await apiRequest(`/api/reviews/${id}`, { method: 'PUT', body: JSON.stringify({ text: newText }) });
+            if (data && data.message) { await loadReviews(); return true; }
+            return false;
+        }
+
+        async function deleteComment(id) {
+            const data = await apiRequest(`/api/reviews/${id}`, { method: 'DELETE' });
+            if (data && data.message) { await loadReviews(); return true; }
+            return false;
+        }
+
+        function updateUserUI() {
+            if (currentUser) {
+                document.getElementById('userName').textContent = currentUser.name;
+                document.getElementById('userEmail').textContent = currentUser.email;
+                document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+                document.getElementById('loginBtn').style.display = 'none';
+                document.getElementById('registerBtn').style.display = 'none';
+                document.getElementById('logoutBtn').style.display = 'block';
+                document.getElementById('adminBtn').style.display = currentUser.is_admin === 1 ? 'block' : 'none';
+            } else {
+                document.getElementById('userName').textContent = 'Не авторизован';
+                document.getElementById('userEmail').textContent = 'Войдите чтобы оставлять отзывы';
+                document.getElementById('userAvatar').textContent = '👤';
+                document.getElementById('loginBtn').style.display = 'block';
+                document.getElementById('registerBtn').style.display = 'block';
+                document.getElementById('logoutBtn').style.display = 'none';
+                document.getElementById('adminBtn').style.display = 'none';
             }
         }
-        
-        async function loadPlaces(){
-            let res = await fetch('/api/places');
-            let places = await res.json();
-            userDiv.style.display = 'none';Ь
-            placesDiv.style.display = 'block';
-            placesList.innerHTML = places.map(p => `<div style="background:#f5f0e6; margin:10px; padding:10px; border-radius:10px"><b>${p.name}</b><br>📍 ${p.address}<br>📅 ${p.year}</div>`).join('');
+
+        function showLoginModal() { document.getElementById('authModal').classList.add('active'); }
+        function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
+
+        function initMap() {
+            if (map) map.remove();
+            if (!document.getElementById('map')) return;
+            map = L.map('map').setView([53.8960, 30.3300], 14);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(map);
+            placesData.forEach((place, i) => {
+                const icon = L.divIcon({ html: `<div style="background:#6b5e3a; width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid #c4b28a; color:white; font-weight:bold;">${i+1}</div>`, iconSize: [32, 32], iconAnchor: [16, 16] });
+                L.marker([place.lat, place.lng], { icon }).addTo(map).bindPopup(`<b style="color:#6b5e3a;">${escapeHtml(place.name)}</b><br>${escapeHtml(place.address)}<br><button onclick="showDetailPage(${place.id})" style="margin-top:5px; background:#6b5e3a; color:white; border:none; padding:5px 12px; border-radius:20px;">📖 Подробнее</button>`);
+            });
         }
-        
-        function back(){ placesDiv.style.display='none'; userDiv.style.display='block'; }
-        function logout(){ localStorage.removeItem('token'); location.reload(); }
+
+        function showOnMap(placeId) {
+            const place = placesData.find(p => p.id === placeId);
+            if (place) {
+                document.getElementById('mapModalTitle').innerHTML = `📍 ${escapeHtml(place.name)}`;
+                document.getElementById('mapModalInfo').innerHTML = `
+                    <div style="height:300px; border-radius:12px; overflow:hidden; margin:10px 0;"><div id="modalMiniMap" style="height:100%; width:100%;"></div></div>
+                    <p><strong>Адрес:</strong> ${escapeHtml(place.address)}</p>
+                    <p><strong>Год:</strong> ${escapeHtml(place.year)}</p>
+                    <img src="${place.new_image}" onerror="this.style.display='none'" style="max-height:150px; width:auto; margin:10px auto;">
+                `;
+                document.getElementById('mapModal').classList.add('active');
+                setTimeout(() => {
+                    if (document.getElementById('modalMiniMap')) {
+                        const miniMap = L.map('modalMiniMap').setView([place.lat, place.lng], 16);
+                        L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap' }).addTo(miniMap);
+                        L.marker([place.lat, place.lng]).addTo(miniMap).bindPopup(place.name).openPopup();
+                    }
+                }, 100);
+            }
+        }
+
+        function closeMapModal() { document.getElementById('mapModal').classList.remove('active'); }
+
+        function formatDate(date) { const d = new Date(date); return `${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}`; }
+        function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+
+        function renderMainPage() {
+            const grid = document.getElementById('placesGrid');
+            if (!grid) return;
+            grid.innerHTML = placesData.map(place => {
+                const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
+                return `
+                    <div class="place-card">
+                        <div class="place-card-header">
+                            <h3>${escapeHtml(place.name)}</h3>
+                            <p>📍 ${escapeHtml(place.address)}</p>
+                        </div>
+                        <div class="comparison-container" onclick="showDetailPage(${place.id})">
+                            <img class="comparison-img old-img" src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                            <img class="comparison-img new-img" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                            <span class="img-label label-old">📷 ТОГДА</span>
+                            <span class="img-label label-new">📸 СЕЙЧАС</span>
+                        </div>
+                        <div class="place-card-info">
+                            <p>${escapeHtml(place.description.substring(0, 100))}${place.description && place.description.length > 100 ? '...' : ''}</p>
+                            <div class="card-buttons">
+                                <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
+                                <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        window.showDetailPage = function(placeId) {
+            const place = placesData.find(p => p.id === placeId);
+            if (!place) return;
+            currentPlaceId = placeId;
+            const placeReviews = reviews.filter(r => r.place_id === placeId && !r.parent_id);
+            const html = `
+                <button class="back-btn" onclick="goBackToMain()">← На главную</button>
+                <div class="detail-page">
+                    <div class="detail-header">
+                        <h2>${escapeHtml(place.name)}</h2>
+                        <div>📍 ${escapeHtml(place.address)}</div>
+                        <div style="margin-top:5px;">📅 ${escapeHtml(place.year)}</div>
+                    </div>
+                    <div class="detail-images">
+                        <img src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                        <img src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                    </div>
+                    <div class="detail-content">
+                        <h3>📖 Описание</h3>
+                        <p>${escapeHtml(place.description)}</p>
+                        <h3>📜 История</h3>
+                        <p>${escapeHtml(place.full_history)}</p>
+                    </div>
+                </div>
+                <div class="comments-section">
+                    <div class="comments-title">💬 Отзывы (${placeReviews.length})</div>
+                    <div class="comment-form">
+                        <textarea id="detailCommentText_${place.id}" placeholder="Поделитесь впечатлениями..."></textarea>
+                        <button class="comment-submit" onclick="submitDetailComment(${place.id})">📝 Отправить отзыв</button>
+                    </div>
+                    <div class="comments-list">
+                        ${placeReviews.length === 0 ? '<div style="text-align:center; padding:30px;">✨ Пока нет отзывов</div>' : 
+                            placeReviews.slice().reverse().map(review => {
+                                const replies = reviews.filter(r => r.parent_id === review.id);
+                                const isOwner = currentUser && review.user_id === currentUser.id;
+                                const isAdmin = currentUser && currentUser.is_admin === 1;
+                                return `
+                                    <div class="comment-item">
+                                        <div class="comment-header">
+                                            <div><span class="comment-author">${escapeHtml(review.user_name)}</span></div>
+                                            <div class="comment-date">${formatDate(review.created_at)}</div>
+                                        </div>
+                                        <div class="comment-text">${escapeHtml(review.text)}${review.edited ? ' <span style="font-size:0.6em;">(ред.)</span>' : ''}</div>
+                                        <div class="comment-actions">
+                                            <button class="comment-btn" onclick="showReplyForm(${review.id})">💬 Ответить</button>
+                                            ${(isOwner || isAdmin) ? `<button class="comment-btn" onclick="editCommentPrompt(${review.id})">✏️ Ред.</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${review.id})">🗑️ Удалить</button>` : ''}
+                                        </div>
+                                        <div id="replyForm-${review.id}" class="reply-form">
+                                            <textarea id="replyText-${review.id}" placeholder="Ваш ответ..."></textarea>
+                                            <button class="comment-submit" onclick="submitReply(${review.id})">Ответить</button>
+                                        </div>
+                                        ${replies.length ? `<div class="replies">${replies.map(r => `<div class="reply-item"><strong>↳ ${escapeHtml(r.user_name)}</strong><div>${escapeHtml(r.text)}</div><div class="comment-date">${formatDate(r.created_at)}</div>${(currentUser && (r.user_id === currentUser.id || currentUser.is_admin === 1)) ? `<div><button class="comment-btn" onclick="editCommentPrompt(${r.id})">✏️</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${r.id})">🗑️</button></div>` : ''}</div>`).join('')}</div>` : ''}
+                                    </div>
+                                `;
+                            }).join('')
+                        }
+                    </div>
+                </div>
+            `;
+            document.getElementById('app').innerHTML = html;
+            window.scrollTo(0, 0);
+        };
+
+        async function submitDetailComment(placeId) {
+            const text = document.getElementById(`detailCommentText_${placeId}`).value;
+            if (await addComment(placeId, text)) {
+                document.getElementById(`detailCommentText_${placeId}`).value = '';
+                showDetailPage(placeId);
+            }
+        }
+
+        function showReplyForm(commentId) { const form = document.getElementById(`replyForm-${commentId}`); if (form) form.classList.toggle('active'); }
+        async function submitReply(parentId) {
+            const text = document.getElementById(`replyText-${parentId}`).value;
+            if (await addReply(parentId, text)) {
+                document.getElementById(`replyText-${parentId}`).value = '';
+                document.getElementById(`replyForm-${parentId}`).classList.remove('active');
+                showDetailPage(currentPlaceId);
+            }
+        }
+        async function editCommentPrompt(id) {
+            const comment = reviews.find(r => r.id === id);
+            const newText = prompt('Редактировать отзыв:', comment.text);
+            if (newText && newText.trim()) await editComment(id, newText);
+        }
+        async function deleteCommentPrompt(id) {
+            if (confirm('Удалить отзыв?')) await deleteComment(id);
+        }
+        function goBackToMain() { renderMainPageView(); }
+
+        function renderCategoryPage(category) {
+            const filtered = placesData.filter(p => p.category === category);
+            const grid = document.getElementById('placesGrid');
+            if (!grid) return;
+            const names = { monument: '🏛️ Памятники', street: '🛣️ Улицы', building: '🏠 Здания' };
+            grid.innerHTML = `<div style="font-size:1.3em; color:#6b5e3a; margin-bottom:20px;">${names[category]}</div>` +
+                filtered.map(place => {
+                    const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
+                    return `
+                        <div class="place-card">
+                            <div class="place-card-header">
+                                <h3>${escapeHtml(place.name)}</h3>
+                                <p>📍 ${escapeHtml(place.address)}</p>
+                            </div>
+                            <div class="comparison-container" onclick="showDetailPage(${place.id})">
+                                <img class="comparison-img old-img" src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                                <img class="comparison-img new-img" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                                <span class="img-label label-old">📷 ТОГДА</span><span class="img-label label-new">📸 СЕЙЧАС</span>
+                            </div>
+                            <div class="place-card-info">
+                                <p>${escapeHtml(place.description.substring(0, 100))}...</p>
+                                <div class="card-buttons">
+                                    <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
+                                    <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+        }
+
+        function renderMainPageView() {
+            currentPage = 'main';
+            document.getElementById('app').innerHTML = `
+                <div class="places-grid" id="placesGrid"></div>
+                <div class="map-section">
+                    <div class="map-title">🗺️ Карта исторических мест Могилева</div>
+                    <div class="map-container"><div id="map"></div></div>
+                </div>
+            `;
+            renderMainPage();
+            initMap();
+        }
+
+        function renderCurrentPage() {
+            if (currentPage === 'main') renderMainPageView();
+            else if (currentPage === 'monuments') {
+                document.getElementById('app').innerHTML = `<div class="places-grid" id="placesGrid"></div><div class="map-section"><div class="map-title">🗺️ Карта</div><div class="map-container"><div id="map"></div></div></div>`;
+                renderCategoryPage('monument');
+                initMap();
+            } else if (currentPage === 'streets') {
+                document.getElementById('app').innerHTML = `<div class="places-grid" id="placesGrid"></div><div class="map-section"><div class="map-title">🗺️ Карта</div><div class="map-container"><div id="map"></div></div></div>`;
+                renderCategoryPage('street');
+                initMap();
+            } else if (currentPage === 'buildings') {
+                document.getElementById('app').innerHTML = `<div class="places-grid" id="placesGrid"></div><div class="map-section"><div class="map-title">🗺️ Карта</div><div class="map-container"><div id="map"></div></div></div>`;
+                renderCategoryPage('building');
+                initMap();
+            }
+        }
+
+        // Админ-панель
+        async function showAdminPanel() {
+            if (!currentUser || currentUser.is_admin !== 1) { alert('Доступ запрещен'); return; }
+            document.getElementById('adminPanel').innerHTML = `
+                <h4>➕ Добавить место</h4>
+                <div class="admin-form">
+                    <input type="text" id="newName" placeholder="Название">
+                    <select id="newCategory"><option value="monument">🏛️ Памятник</option><option value="street">🛣️ Улица</option><option value="building">🏠 Здание</option></select>
+                    <input type="text" id="newAddress" placeholder="Адрес">
+                    <input type="text" id="newLat" placeholder="Широта (lat)">
+                    <input type="text" id="newLng" placeholder="Долгота (lng)">
+                    <input type="text" id="newYear" placeholder="Год">
+                    <textarea id="newDesc" placeholder="Краткое описание" rows="2"></textarea>
+                    <textarea id="newHistory" placeholder="Полная история" rows="3"></textarea>
+                    <input type="text" id="newOldImg" placeholder="URL старого фото">
+                    <input type="text" id="newNewImg" placeholder="URL нового фото">
+                    <button class="admin-btn" onclick="adminAddPlace()">➕ Добавить</button>
+                </div>
+                <h4 style="margin-top:15px;">📋 Существующие места</h4>
+                <div id="placesList"></div>
+                <button class="admin-close-btn" onclick="closeAdminPanel()">✖️ Закрыть</button>
+            `;
+            renderPlacesList();
+            document.getElementById('adminModal').classList.add('active');
+        }
+
+        async function adminAddPlace() {
+            const name = document.getElementById('newName').value;
+            const category = document.getElementById('newCategory').value;
+            const address = document.getElementById('newAddress').value;
+            const lat = parseFloat(document.getElementById('newLat').value);
+            const lng = parseFloat(document.getElementById('newLng').value);
+            const year = document.getElementById('newYear').value;
+            const description = document.getElementById('newDesc').value;
+            const full_history = document.getElementById('newHistory').value;
+            const old_image = document.getElementById('newOldImg').value;
+            const new_image = document.getElementById('newNewImg').value;
+            if (!name || !address || isNaN(lat) || isNaN(lng)) { alert('Заполните название, адрес и координаты!'); return; }
+            const data = await apiRequest('/api/admin/places', { method: 'POST', body: JSON.stringify({ name, category, address, lat, lng, year, description, full_history, old_image, new_image }) });
+            if (data && data.id) { await loadPlaces(); renderPlacesList(); alert('Место добавлено!'); } else if (data && data.error) alert(data.error);
+        }
+
+        async function adminDeletePlace(id) {
+            if (confirm('Удалить место?')) {
+                const data = await apiRequest(`/api/admin/places/${id}`, { method: 'DELETE' });
+                if (data && data.message) { await loadPlaces(); renderPlacesList(); alert('Место удалено'); }
+            }
+        }
+
+        function renderPlacesList() {
+            const container = document.getElementById('placesList');
+            if (!container) return;
+            container.innerHTML = placesData.map(p => `<div class="place-item"><span>${escapeHtml(p.name)}</span><button onclick="adminDeletePlace(${p.id})">🗑️ Удалить</button></div>`).join('');
+        }
+
+        function closeAdminPanel() { document.getElementById('adminModal').classList.remove('active'); }
+
+        // Глобальные функции
+        window.showDetailPage = showDetailPage;
+        window.showOnMap = showOnMap;
+        window.goBackToMain = goBackToMain;
+        window.closeMapModal = closeMapModal;
+        window.showReplyForm = showReplyForm;
+        window.submitReply = submitReply;
+        window.editCommentPrompt = editCommentPrompt;
+        window.deleteCommentPrompt = deleteCommentPrompt;
+        window.submitDetailComment = submitDetailComment;
+        window.adminAddPlace = adminAddPlace;
+        window.adminDeletePlace = adminDeletePlace;
+        window.closeAdminPanel = closeAdminPanel;
+
+        // Навигация
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = link.dataset.page;
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                link.classList.add('active');
+                currentPage = page;
+                renderCurrentPage();
+                window.scrollTo(0, 0);
+            });
+        });
+
+        document.getElementById('loginBtn').onclick = showLoginModal;
+        document.getElementById('registerBtn').onclick = showLoginModal;
+        document.getElementById('logoutBtn').onclick = logout;
+        document.getElementById('adminBtn').onclick = showAdminPanel;
+        document.getElementById('closeAuthModal').onclick = closeAuthModal;
+        document.getElementById('closeAdmin').onclick = closeAdminPanel;
+
+        document.querySelectorAll('.modal-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('loginForm').style.display = tab.dataset.tab === 'login' ? 'block' : 'none';
+                document.getElementById('registerForm').style.display = tab.dataset.tab === 'register' ? 'block' : 'none';
+            });
+        });
+
+        document.getElementById('submitLogin').onclick = async () => {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            if (await login(email, password)) { closeAuthModal(); await loadReviews(); }
+        };
+        document.getElementById('submitRegister').onclick = async () => {
+            const name = document.getElementById('regName').value;
+            const email = document.getElementById('regEmail').value;
+            const password = document.getElementById('regPassword').value;
+            const confirm = document.getElementById('regConfirmPassword').value;
+            if (password !== confirm) { alert('Пароли не совпадают'); return; }
+            if (await register(email, password, name)) { closeAuthModal(); await loadReviews(); }
+        };
+
+        async function init() {
+            if (authToken) {
+                const data = await apiRequest('/api/me');
+                if (data && data.user) { currentUser = data.user; updateUserUI(); }
+                else { authToken = null; localStorage.removeItem('token'); }
+            }
+            await loadPlaces();
+            await loadReviews();
+            updateUserUI();
+        }
+        init();
     </script>
 </body>
-</html>ьь
+</html>
