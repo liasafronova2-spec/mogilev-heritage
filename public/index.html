@@ -935,7 +935,10 @@
             }
         }
 
-        function showLoginModal() { document.getElementById('authModal').classList.add('active'); }
+        function showLoginModal() { 
+            resetAuthModal();
+            document.getElementById('authModal').classList.add('active'); 
+        }
         function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
         function closeMapModal() { document.getElementById('mapModal').classList.remove('active'); }
 
@@ -1210,6 +1213,33 @@
 
         function closeAdminPanel() { document.getElementById('adminModal').classList.remove('active'); }
 
+        // Исправление переключения табов в модальном окне
+        function resetAuthModal() {
+            const loginTab = document.querySelector('.modal-tab[data-tab="login"]');
+            const registerTab = document.querySelector('.modal-tab[data-tab="register"]');
+            
+            if (loginTab) loginTab.classList.add('active');
+            if (registerTab) registerTab.classList.remove('active');
+            
+            document.getElementById('loginForm').style.display = 'block';
+            document.getElementById('registerForm').style.display = 'none';
+        }
+
+        document.querySelectorAll('.modal-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                
+                if (tab.dataset.tab === 'login') {
+                    document.getElementById('loginForm').style.display = 'block';
+                    document.getElementById('registerForm').style.display = 'none';
+                } else if (tab.dataset.tab === 'register') {
+                    document.getElementById('loginForm').style.display = 'none';
+                    document.getElementById('registerForm').style.display = 'block';
+                }
+            });
+        });
+
         window.showDetailPage = showDetailPage;
         window.showOnMap = showOnMap;
         window.goBackToMain = goBackToMain;
@@ -1241,15 +1271,6 @@
         document.getElementById('registerBtn').onclick = showLoginModal;
         document.getElementById('logoutBtn').onclick = logout;
         document.getElementById('adminBtn').onclick = showAdminPanel;
-
-        document.querySelectorAll('.modal-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById('loginForm').style.display = tab.dataset.tab === 'login' ? 'block' : 'none';
-                document.getElementById('registerForm').style.display = tab.dataset.tab === 'register' ? 'block' : 'none';
-            });
-        });
 
         document.getElementById('submitLogin').onclick = async () => {
             const email = document.getElementById('loginEmail').value;
