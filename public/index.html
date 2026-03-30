@@ -501,80 +501,73 @@
             margin-top: 8px;
         }
 
-        .modal-map, .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.9);
-            z-index: 2000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .modal-map.active, .modal.active {
-            display: flex;
-        }
-
-        .modal-map-content, .modal-content {
+        /* Страницы входа и регистрации */
+        .auth-page {
+            max-width: 450px;
+            margin: 40px auto;
             background: white;
-            border-radius: 28px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 85vh;
-            overflow-y: auto;
-            padding: 40px 24px 24px;
+            border-radius: 32px;
+            padding: 32px 28px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1);
             position: relative;
         }
 
-        .modal-close {
+        .auth-page h2 {
+            color: #6b5e3a;
+            margin-bottom: 24px;
+            text-align: center;
+            font-size: 1.6em;
+        }
+
+        .auth-page input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid #e8dbbc;
+            border-radius: 30px;
+            margin-bottom: 16px;
+            font-size: 1em;
+            background: #fef9f0;
+        }
+
+        .auth-page button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+        }
+
+        .auth-links {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #6b5e3a;
+        }
+
+        .auth-links a {
+            color: #6b5e3a;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+        .close-auth {
             position: absolute;
-            top: 16px;
-            right: 20px;
+            top: 20px;
+            right: 24px;
             font-size: 28px;
             cursor: pointer;
             color: #999;
             background: none;
             border: none;
-            line-height: 1;
-            z-index: 10;
         }
 
-        .modal-close:hover {
+        .close-auth:hover {
             color: #6b5e3a;
-        }
-
-        .modal-tabs {
-            display: flex;
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-
-        .modal-tab {
-            flex: 1;
-            padding: 10px;
-            background: #f0ebe2;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-            font-size: 0.9em;
-        }
-
-        .modal-tab.active {
-            background: #6b5e3a;
-            color: white;
-        }
-
-        .modal-content input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #e8dbbc;
-            border-radius: 30px;
-            margin: 8px 0;
-            font-size: 0.9em;
         }
 
         .admin-panel {
@@ -702,11 +695,9 @@
             .header h1 {
                 font-size: 1.3em;
             }
-            .modal-content {
-                padding: 40px 20px 20px;
-            }
-            .modal-content input {
-                padding: 10px;
+            .auth-page {
+                margin: 20px;
+                padding: 24px 20px;
             }
         }
 
@@ -769,39 +760,17 @@
         </div>
     </div>
 
-    <div id="authModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeAuthModal()">&times;</button>
-            <div class="modal-tabs">
-                <button class="modal-tab active" data-tab="login">🔐 Вход</button>
-                <button class="modal-tab" data-tab="register">📝 Регистрация</button>
-            </div>
-            <div id="loginForm">
-                <input type="email" id="loginEmail" placeholder="Email">
-                <input type="password" id="loginPassword" placeholder="Пароль">
-                <button class="comment-submit" id="submitLogin">Войти</button>
-            </div>
-            <div id="registerForm" style="display:none;">
-                <input type="text" id="regName" placeholder="Имя">
-                <input type="email" id="regEmail" placeholder="Email">
-                <input type="password" id="regPassword" placeholder="Пароль (минимум 6 символов)">
-                <input type="password" id="regConfirmPassword" placeholder="Подтвердите пароль">
-                <button class="comment-submit" id="submitRegister">Зарегистрироваться</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="adminModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeAdminPanel()">&times;</button>
+    <div id="adminModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; justify-content:center; align-items:center; padding:20px;">
+        <div class="modal-content" style="background:white; border-radius:28px; max-width:500px; width:90%; max-height:85vh; overflow-y:auto; padding:24px; position:relative;">
+            <button class="modal-close" onclick="closeAdminPanel()" style="position:absolute; top:16px; right:20px; font-size:28px; cursor:pointer; background:none; border:none;">&times;</button>
             <h3>👑 Админ-панель</h3>
             <div id="adminPanel"></div>
         </div>
     </div>
 
-    <div id="mapModal" class="modal">
-        <div class="modal-content">
-            <button class="modal-close" onclick="closeMapModal()">&times;</button>
+    <div id="mapModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; justify-content:center; align-items:center; padding:20px;">
+        <div class="modal-content" style="background:white; border-radius:28px; max-width:500px; width:90%; max-height:85vh; overflow-y:auto; padding:24px; position:relative;">
+            <button class="modal-close" onclick="closeMapModal()" style="position:absolute; top:16px; right:20px; font-size:28px; cursor:pointer; background:none; border:none;">&times;</button>
             <h3 id="mapModalTitle">📍 Место на карте</h3>
             <div id="mapModalInfo"></div>
         </div>
@@ -874,6 +843,13 @@
             renderCurrentPage();
         }
 
+        async function requestPasswordReset(email) {
+            // Здесь будет запрос на сервер для сброса пароля
+            // Пока имитируем отправку
+            alert(`Инструкции по восстановлению пароля отправлены на ${email}`);
+            showLoginPage();
+        }
+
         async function loadPlaces() {
             const data = await apiRequest('/api/places');
             if (data && !data.error) {
@@ -888,7 +864,7 @@
         }
 
         async function addComment(placeId, text) {
-            if (!currentUser) { showLoginModal(); return false; }
+            if (!currentUser) { showLoginPage(); return false; }
             if (!text.trim()) { alert('Введите текст отзыва!'); return false; }
             const data = await apiRequest('/api/reviews', { method: 'POST', body: JSON.stringify({ place_id: placeId, text }) });
             if (data && data.id) { await loadReviews(); return true; }
@@ -896,7 +872,7 @@
         }
 
         async function addReply(parentId, text) {
-            if (!currentUser) { showLoginModal(); return false; }
+            if (!currentUser) { showLoginPage(); return false; }
             if (!text.trim()) return false;
             const data = await apiRequest('/api/reviews', { method: 'POST', body: JSON.stringify({ text, parent_id: parentId }) });
             if (data && data.id) { await loadReviews(); return true; }
@@ -935,12 +911,86 @@
             }
         }
 
-        function showLoginModal() { 
-            resetAuthModal();
-            document.getElementById('authModal').classList.add('active'); 
+        // Страницы авторизации
+        function showLoginPage() {
+            const loginHtml = `
+                <div class="auth-page">
+                    <button class="close-auth" onclick="goBackToMain()">&times;</button>
+                    <h2>🔐 Вход</h2>
+                    <input type="email" id="loginEmailPage" placeholder="Email">
+                    <input type="password" id="loginPasswordPage" placeholder="Пароль">
+                    <button onclick="submitLoginPage()">Войти</button>
+                    <div class="auth-links">
+                        <a onclick="showForgotPasswordPage()">Забыли пароль?</a>
+                        <span style="margin:0 10px">|</span>
+                        <a onclick="showRegisterPage()">Нет аккаунта? Зарегистрироваться</a>
+                    </div>
+                </div>
+            `;
+            document.getElementById('app').innerHTML = loginHtml;
+            window.scrollTo(0, 0);
         }
-        function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
-        function closeMapModal() { document.getElementById('mapModal').classList.remove('active'); }
+
+        function showRegisterPage() {
+            const registerHtml = `
+                <div class="auth-page">
+                    <button class="close-auth" onclick="goBackToMain()">&times;</button>
+                    <h2>📝 Регистрация</h2>
+                    <input type="text" id="regNamePage" placeholder="Имя">
+                    <input type="email" id="regEmailPage" placeholder="Email">
+                    <input type="password" id="regPasswordPage" placeholder="Пароль (минимум 6 символов)">
+                    <input type="password" id="regConfirmPasswordPage" placeholder="Подтвердите пароль">
+                    <button onclick="submitRegisterPage()">Зарегистрироваться</button>
+                    <div class="auth-links">
+                        <a onclick="showLoginPage()">Уже есть аккаунт? Войти</a>
+                    </div>
+                </div>
+            `;
+            document.getElementById('app').innerHTML = registerHtml;
+            window.scrollTo(0, 0);
+        }
+
+        function showForgotPasswordPage() {
+            const forgotHtml = `
+                <div class="auth-page">
+                    <button class="close-auth" onclick="goBackToMain()">&times;</button>
+                    <h2>🔑 Восстановление пароля</h2>
+                    <p style="text-align:center; margin-bottom:20px; color:#666;">Введите email, указанный при регистрации</p>
+                    <input type="email" id="resetEmailPage" placeholder="Email">
+                    <button onclick="submitResetPassword()">Отправить</button>
+                    <div class="auth-links">
+                        <a onclick="showLoginPage()">← Вернуться ко входу</a>
+                    </div>
+                </div>
+            `;
+            document.getElementById('app').innerHTML = forgotHtml;
+            window.scrollTo(0, 0);
+        }
+
+        async function submitLoginPage() {
+            const email = document.getElementById('loginEmailPage').value;
+            const password = document.getElementById('loginPasswordPage').value;
+            if (await login(email, password)) {
+                goBackToMain();
+            }
+        }
+
+        async function submitRegisterPage() {
+            const name = document.getElementById('regNamePage').value;
+            const email = document.getElementById('regEmailPage').value;
+            const password = document.getElementById('regPasswordPage').value;
+            const confirm = document.getElementById('regConfirmPasswordPage').value;
+            if (password !== confirm) { alert('Пароли не совпадают'); return; }
+            if (await register(email, password, name)) {
+                goBackToMain();
+            }
+        }
+
+        async function submitResetPassword() {
+            const email = document.getElementById('resetEmailPage').value;
+            if (!email) { alert('Введите email'); return; }
+            await requestPasswordReset(email);
+        }
 
         function initMap() {
             if (map) map.remove();
@@ -963,7 +1013,7 @@
                     <p><strong>Год:</strong> ${place.year}</p>
                     <img src="${place.new_image}" style="max-height:160px; width:auto; margin:10px auto;">
                 `;
-                document.getElementById('mapModal').classList.add('active');
+                document.getElementById('mapModal').style.display = 'flex';
                 setTimeout(() => {
                     if (document.getElementById('modalMiniMap')) {
                         const miniMap = L.map('modalMiniMap').setView([place.lat, place.lng], 16);
@@ -973,6 +1023,8 @@
                 }, 100);
             }
         }
+
+        function closeMapModal() { document.getElementById('mapModal').style.display = 'none'; }
 
         function formatDate(date) { const d = new Date(date); return `${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}`; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
@@ -1017,7 +1069,7 @@
                 </div>
             ` : `
                 <div class="comment-form" style="text-align:center; background:#faf6ed; padding:20px; border-radius:16px;">
-                    <p>🔒 Чтобы оставить отзыв, <a href="#" onclick="showLoginModal(); return false;">войдите</a> или <a href="#" onclick="showLoginModal(); return false;">зарегистрируйтесь</a>.</p>
+                    <p>🔒 Чтобы оставить отзыв, <a href="#" onclick="showLoginPage(); return false;">войдите</a> или <a href="#" onclick="showRegisterPage(); return false;">зарегистрируйтесь</a>.</p>
                 </div>
             `;
 
@@ -1179,7 +1231,7 @@
                 <div id="placesList"></div>
             `;
             renderPlacesList();
-            document.getElementById('adminModal').classList.add('active');
+            document.getElementById('adminModal').style.display = 'flex';
         }
 
         async function adminAddPlace() {
@@ -1211,34 +1263,7 @@
             container.innerHTML = placesData.map(p => `<div class="place-item"><span>${escapeHtml(p.name)}</span><button onclick="adminDeletePlace(${p.id})">🗑️ Удалить</button></div>`).join('');
         }
 
-        function closeAdminPanel() { document.getElementById('adminModal').classList.remove('active'); }
-
-        // Исправление переключения табов в модальном окне
-        function resetAuthModal() {
-            const loginTab = document.querySelector('.modal-tab[data-tab="login"]');
-            const registerTab = document.querySelector('.modal-tab[data-tab="register"]');
-            
-            if (loginTab) loginTab.classList.add('active');
-            if (registerTab) registerTab.classList.remove('active');
-            
-            document.getElementById('loginForm').style.display = 'block';
-            document.getElementById('registerForm').style.display = 'none';
-        }
-
-        document.querySelectorAll('.modal-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.modal-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                if (tab.dataset.tab === 'login') {
-                    document.getElementById('loginForm').style.display = 'block';
-                    document.getElementById('registerForm').style.display = 'none';
-                } else if (tab.dataset.tab === 'register') {
-                    document.getElementById('loginForm').style.display = 'none';
-                    document.getElementById('registerForm').style.display = 'block';
-                }
-            });
-        });
+        function closeAdminPanel() { document.getElementById('adminModal').style.display = 'none'; }
 
         window.showDetailPage = showDetailPage;
         window.showOnMap = showOnMap;
@@ -1252,8 +1277,11 @@
         window.adminAddPlace = adminAddPlace;
         window.adminDeletePlace = adminDeletePlace;
         window.closeAdminPanel = closeAdminPanel;
-        window.closeAuthModal = closeAuthModal;
-        window.showLoginModal = showLoginModal;
+        window.showLoginPage = showLoginPage;
+        window.showRegisterPage = showRegisterPage;
+        window.submitLoginPage = submitLoginPage;
+        window.submitRegisterPage = submitRegisterPage;
+        window.submitResetPassword = submitResetPassword;
 
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -1267,24 +1295,10 @@
             });
         });
 
-        document.getElementById('loginBtn').onclick = showLoginModal;
-        document.getElementById('registerBtn').onclick = showLoginModal;
+        document.getElementById('loginBtn').onclick = showLoginPage;
+        document.getElementById('registerBtn').onclick = showRegisterPage;
         document.getElementById('logoutBtn').onclick = logout;
         document.getElementById('adminBtn').onclick = showAdminPanel;
-
-        document.getElementById('submitLogin').onclick = async () => {
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            if (await login(email, password)) { closeAuthModal(); await loadReviews(); }
-        };
-        document.getElementById('submitRegister').onclick = async () => {
-            const name = document.getElementById('regName').value;
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            const confirm = document.getElementById('regConfirmPassword').value;
-            if (password !== confirm) { alert('Пароли не совпадают'); return; }
-            if (await register(email, password, name)) { closeAuthModal(); await loadReviews(); }
-        };
 
         async function init() {
             if (authToken) {
