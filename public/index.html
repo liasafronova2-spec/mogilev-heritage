@@ -501,7 +501,7 @@
             margin-top: 8px;
         }
 
-        /* Страницы входа и регистрации */
+        /* Стили для страниц авторизации */
         .auth-page {
             max-width: 450px;
             margin: 40px auto;
@@ -568,6 +568,43 @@
 
         .close-auth:hover {
             color: #6b5e3a;
+        }
+
+        /* Модалки админа и карты */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 28px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 24px;
+            position: relative;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 20px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            background: none;
+            border: none;
         }
 
         .admin-panel {
@@ -760,17 +797,17 @@
         </div>
     </div>
 
-    <div id="adminModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; justify-content:center; align-items:center; padding:20px;">
-        <div class="modal-content" style="background:white; border-radius:28px; max-width:500px; width:90%; max-height:85vh; overflow-y:auto; padding:24px; position:relative;">
-            <button class="modal-close" onclick="closeAdminPanel()" style="position:absolute; top:16px; right:20px; font-size:28px; cursor:pointer; background:none; border:none;">&times;</button>
+    <div id="adminModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeAdminPanel()">&times;</button>
             <h3>👑 Админ-панель</h3>
             <div id="adminPanel"></div>
         </div>
     </div>
 
-    <div id="mapModal" class="modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; justify-content:center; align-items:center; padding:20px;">
-        <div class="modal-content" style="background:white; border-radius:28px; max-width:500px; width:90%; max-height:85vh; overflow-y:auto; padding:24px; position:relative;">
-            <button class="modal-close" onclick="closeMapModal()" style="position:absolute; top:16px; right:20px; font-size:28px; cursor:pointer; background:none; border:none;">&times;</button>
+    <div id="mapModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeMapModal()">&times;</button>
             <h3 id="mapModalTitle">📍 Место на карте</h3>
             <div id="mapModalInfo"></div>
         </div>
