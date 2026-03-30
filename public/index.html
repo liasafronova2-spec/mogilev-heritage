@@ -13,10 +13,9 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #f5f0e6 0%, #e8e0d5 100%);
             color: #4a3b2c;
-            line-height: 1.4;
         }
 
         /* ===== ШАПКА ===== */
@@ -25,17 +24,15 @@
             color: white;
             padding: 20px 16px;
             text-align: center;
-            position: relative;
-            z-index: 100;
         }
 
         .header h1 {
             font-size: 1.5em;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
 
         .header p {
-            font-size: 0.8em;
+            font-size: 0.9em;
             opacity: 0.9;
         }
 
@@ -58,7 +55,6 @@
             display: flex;
             align-items: center;
             gap: 12px;
-            flex-wrap: wrap;
         }
 
         .user-avatar {
@@ -88,7 +84,6 @@
         .user-email {
             font-size: 0.7em;
             color: #999;
-            word-break: break-all;
         }
 
         .btn-group {
@@ -98,34 +93,29 @@
         }
 
         .login-btn, .logout-btn, .register-btn, .admin-btn-header {
-            background: #6b5e3a;
-            color: white;
-            border: none;
             padding: 8px 18px;
-            border-radius: 30px;
-            cursor: pointer;
             font-size: 0.85em;
-            font-weight: 500;
-            transition: 0.2s;
+            border-radius: 30px;
             min-width: 100px;
             text-align: center;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
         }
 
-        .login-btn:hover, .register-btn:hover, .admin-btn-header:hover {
-            transform: scale(1.02);
-            background: #7d6e46;
-        }
-
-        .logout-btn {
-            background: #d9534f;
+        .login-btn, .admin-btn-header {
+            background: #6b5e3a;
+            color: white;
         }
 
         .register-btn {
             background: #2c3e2f;
+            color: white;
         }
 
-        .admin-btn-header {
-            background: #2c3e2f;
+        .logout-btn {
+            background: #d9534f;
+            color: white;
         }
 
         /* ===== НАВИГАЦИЯ ===== */
@@ -146,8 +136,6 @@
             padding: 8px 20px;
             border-radius: 30px;
             cursor: pointer;
-            transition: 0.2s;
-            font-size: 1em;
         }
 
         .nav-link.active {
@@ -182,12 +170,11 @@
             border-radius: 24px;
             overflow: hidden;
             box-shadow: 0 8px 20px rgba(0,0,0,0.08);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: transform 0.2s;
         }
 
         .place-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 28px rgba(0,0,0,0.12);
         }
 
         .place-card-header {
@@ -201,12 +188,6 @@
             margin-bottom: 6px;
         }
 
-        .place-card-header p {
-            font-size: 0.75em;
-            opacity: 0.9;
-        }
-
-        /* Сравнение фото */
         .comparison-container {
             position: relative;
             height: 220px;
@@ -220,7 +201,7 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transition: all 0.3s ease;
+            transition: 0.3s;
         }
 
         .old-img {
@@ -233,8 +214,7 @@
             border-right: 3px solid #ffc107;
         }
 
-        .comparison-container:hover .new-img,
-        .comparison-container:active .new-img {
+        .comparison-container:hover .new-img {
             width: 100%;
         }
 
@@ -246,9 +226,7 @@
             padding: 4px 12px;
             border-radius: 20px;
             font-size: 0.65em;
-            font-weight: 500;
             z-index: 3;
-            pointer-events: none;
         }
 
         .label-old {
@@ -266,34 +244,21 @@
             padding: 16px;
         }
 
-        .place-card-info p {
-            font-size: 0.9em;
-            color: #5a4e3a;
-            margin-bottom: 16px;
-            line-height: 1.4;
-        }
-
-        /* Кнопки карточки */
         .card-buttons {
             display: flex;
             gap: 12px;
-            margin-top: 8px;
+            margin-top: 12px;
         }
 
         .card-btn {
             flex: 1;
-            padding: 10px 12px;
+            padding: 10px;
             border: none;
             border-radius: 40px;
             font-size: 0.8em;
             font-weight: 500;
             cursor: pointer;
             text-align: center;
-            transition: 0.2s;
-        }
-
-        .card-btn:active {
-            transform: scale(0.97);
         }
 
         .btn-map {
@@ -312,15 +277,13 @@
             border-radius: 28px;
             padding: 20px;
             margin: 30px 0;
-            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
         }
 
         .map-title {
             font-size: 1.3em;
             color: #6b5e3a;
-            margin-bottom: 16px;
             text-align: center;
-            font-weight: 600;
+            margin-bottom: 16px;
         }
 
         .map-container {
@@ -334,211 +297,45 @@
             height: 100%;
         }
 
-        /* ===== СТРАНИЦА ДЕТАЛЕЙ ===== */
-        .detail-page {
-            background: white;
-            border-radius: 28px;
-            overflow: hidden;
-            margin-bottom: 28px;
+        /* ===== ФУТЕР (исправлен) ===== */
+        .footer {
+            background: #2c3e2f;
+            color: #fef9f0;
+            padding: 40px 20px 24px;
+            margin-top: 50px;
         }
 
-        .detail-header {
-            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
-            color: white;
-            padding: 24px;
-        }
-
-        .detail-header h2 {
-            font-size: 1.6em;
-            margin-bottom: 8px;
-        }
-
-        .detail-images {
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 2px;
-            background: #e8e0d5;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 40px;
+            text-align: center;
         }
 
-        .detail-images img {
-            width: 100%;
-            height: 260px;
-            object-fit: cover;
+        .footer-section h4 {
+            color: #e8dbbc;
+            margin-bottom: 12px;
         }
 
-        .detail-content {
-            padding: 24px;
+        .footer-section p {
+            opacity: 0.85;
+            font-size: 0.85em;
+            line-height: 1.5;
         }
 
-        .detail-content h3 {
-            color: #6b5e3a;
-            margin: 20px 0 12px;
-            font-size: 1.2em;
-        }
-
-        .detail-content p {
-            line-height: 1.6;
-            color: #5a4e3a;
-        }
-
-        .back-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: white;
-            border: none;
-            color: #6b5e3a;
-            font-size: 0.9em;
-            cursor: pointer;
-            margin-bottom: 20px;
-            padding: 10px 24px;
-            border-radius: 40px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        }
-
-        /* ===== ОТЗЫВЫ ===== */
-        .comments-section {
-            background: white;
-            border-radius: 28px;
-            padding: 24px;
+        .footer-bottom {
+            text-align: center;
+            padding-top: 28px;
             margin-top: 28px;
-        }
-
-        .comments-title {
-            font-size: 1.3em;
-            color: #6b5e3a;
-            margin-bottom: 24px;
-        }
-
-        .comment-form {
-            background: #faf6ed;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 24px;
-        }
-
-        .comment-form textarea {
-            width: 100%;
-            padding: 14px;
-            border: 1px solid #e8dbbc;
-            border-radius: 16px;
-            font-family: inherit;
-            resize: vertical;
-            margin-bottom: 16px;
-            font-size: 0.9em;
-        }
-
-        .comment-submit {
-            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
-            color: white;
-            border: none;
-            padding: 12px;
-            border-radius: 40px;
-            cursor: pointer;
-            width: 100%;
-            font-weight: 600;
-            font-size: 0.9em;
-            transition: 0.2s;
-            margin-top: 8px;
-        }
-
-        .comment-submit:hover {
-            transform: scale(1.02);
-        }
-
-        .comments-list {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-            max-height: 550px;
-            overflow-y: auto;
-        }
-
-        .comment-item {
-            background: #faf6ed;
-            border-radius: 20px;
-            padding: 16px;
-            border-left: 4px solid #6b5e3a;
-        }
-
-        .comment-header {
-            display: flex;
-            justify-content: space-between;
-            flex-wrap: wrap;
-            margin-bottom: 10px;
-        }
-
-        .comment-author {
-            font-weight: bold;
-            color: #6b5e3a;
-            font-size: 0.95em;
-        }
-
-        .comment-text {
-            color: #5a4e3a;
-            margin: 10px 0;
-            line-height: 1.45;
-            font-size: 0.9em;
-        }
-
-        .comment-date {
-            font-size: 0.7em;
-            color: #999;
-        }
-
-        .comment-actions {
-            display: flex;
-            gap: 15px;
-            margin-top: 12px;
-        }
-
-        .comment-btn {
-            background: none;
-            border: none;
-            color: #6b5e3a;
+            border-top: 1px solid rgba(255,255,255,0.2);
             font-size: 0.75em;
-            cursor: pointer;
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
-
-        .delete-btn {
-            color: #d9534f;
-        }
-
-        .reply-form {
-            margin-top: 12px;
-            padding-left: 24px;
-            display: none;
-        }
-
-        .reply-form.active {
-            display: block;
-        }
-
-        .reply-form textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #e8dbbc;
-            border-radius: 14px;
-            margin-bottom: 10px;
-        }
-
-        .replies {
-            margin-top: 14px;
-            padding-left: 24px;
-            border-left: 2px solid #e8dbbc;
-        }
-
-        .reply-item {
-            background: white;
-            border-radius: 16px;
-            padding: 12px;
-            margin-top: 10px;
+            opacity: 0.8;
         }
 
         /* ===== МОДАЛЬНЫЕ ОКНА ===== */
-        .modal-map, .modal {
+        .modal {
             display: none;
             position: fixed;
             top: 0;
@@ -552,14 +349,14 @@
             padding: 20px;
         }
 
-        .modal-map.active, .modal.active {
+        .modal.active {
             display: flex;
         }
 
-        .modal-map-content, .modal-content {
+        .modal-content {
             background: white;
             border-radius: 28px;
-            max-width: 550px;
+            max-width: 500px;
             width: 90%;
             max-height: 85vh;
             overflow-y: auto;
@@ -582,20 +379,6 @@
 
         .modal-close:hover {
             color: #6b5e3a;
-        }
-
-        .modal-map-content h3, .modal-content h3 {
-            color: #6b5e3a;
-            margin-bottom: 18px;
-            font-size: 1.4em;
-        }
-
-        .modal-map-content img {
-            width: 100%;
-            border-radius: 16px;
-            margin: 12px 0;
-            max-height: 220px;
-            object-fit: cover;
         }
 
         .modal-tabs {
@@ -628,121 +411,108 @@
             font-size: 0.9em;
         }
 
+        .comment-submit {
+            padding: 12px;
+            font-size: 0.9em;
+            border-radius: 40px;
+            width: 100%;
+            margin-top: 8px;
+            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .comment-submit:hover {
+            transform: scale(1.02);
+        }
+
         /* ===== АДМИН-ПАНЕЛЬ ===== */
         .admin-panel {
-            background: linear-gradient(135deg, #2c3e2f, #1e2a1a);
+            background: #2c3e2f;
             border-radius: 20px;
             padding: 20px;
             margin-top: 20px;
             color: white;
-            max-height: 450px;
-            overflow-y: auto;
         }
 
         .admin-form {
             display: grid;
-            gap: 12px;
+            gap: 10px;
         }
 
-        .admin-form input, .admin-form select, .admin-form textarea {
-            padding: 10px;
-            border-radius: 14px;
+        .admin-form input, .admin-form textarea {
+            padding: 8px;
+            border-radius: 10px;
             border: none;
         }
 
         .admin-btn {
             background: #c4b28a;
             color: #4a3b2c;
-            border: none;
-            padding: 12px;
-            border-radius: 30px;
+            padding: 8px;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: bold;
+            border: none;
         }
 
         .place-item {
             background: rgba(255,255,255,0.1);
-            padding: 12px;
-            border-radius: 14px;
-            margin-top: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 8px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
         }
 
         .place-item button {
             background: #d9534f;
             color: white;
             border: none;
-            padding: 6px 14px;
-            border-radius: 20px;
+            padding: 4px 12px;
+            border-radius: 6px;
             cursor: pointer;
         }
 
-        /* ===== ФУТЕР ===== */
-        .footer {
-            background: #3a4a2e;  /* более светлый тёмно-зелёный, гармонирует с фоном */
-            color: #fef9f0;
-            padding: 40px 20px 24px;
-            margin-top: 50px;
+        .back-btn {
+            background: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 40px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .footer-content {
-            max-width: 1200px;
-            margin: 0 auto;
+        .detail-images {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 40px;
-            text-align: center;
+            grid-template-columns: 1fr 1fr;
+            gap: 2px;
+            background: #e8e0d5;
+        }
+        .detail-images img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+        .detail-content {
+            padding: 20px;
         }
 
-        .footer-section h4 {
-            color: #e8dbbc;
-            margin-bottom: 12px;
-            font-size: 1.1em;
-        }
-
-        .footer-section p {
-            opacity: 0.85;
-            font-size: 0.85em;
-            line-height: 1.5;
-        }
-
-        .footer-bottom {
-            text-align: center;
-            padding-top: 28px;
-            margin-top: 28px;
-            border-top: 1px solid rgba(255,255,255,0.2);
-            font-size: 0.75em;
-            opacity: 0.8;
-        }
-
-        /* ===== АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ ===== */
+        /* ===== АДАПТАЦИЯ ===== */
         @media (max-width: 768px) {
             .user-bar {
-                position: static;
                 flex-direction: column;
                 align-items: stretch;
+                text-align: center;
             }
             .user-info {
                 justify-content: center;
             }
             .btn-group {
                 justify-content: center;
-            }
-            .nav-bar {
-                position: static;
-                gap: 12px;
-            }
-            .nav-link {
-                padding: 6px 14px;
-                font-size: 0.85em;
-            }
-            .places-grid {
-                grid-template-columns: 1fr;
-                gap: 20px;
             }
             .map-container {
                 height: 280px;
@@ -760,13 +530,6 @@
                 font-size: 1.3em;
             }
         }
-
-        @media (min-width: 769px) {
-            .user-bar {
-                position: sticky;
-                top: 0;
-            }
-        }
     </style>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 </head>
@@ -779,7 +542,7 @@
     <div class="user-bar">
         <div class="user-info">
             <div class="user-avatar" id="userAvatar">👤</div>
-            <div class="user-details">
+            <div>
                 <div class="user-name" id="userName">Гость</div>
                 <div class="user-email" id="userEmail">Войдите, чтобы писать отзывы</div>
             </div>
@@ -829,7 +592,7 @@
                 <button class="modal-tab" data-tab="register">📝 Регистрация</button>
             </div>
             <div id="loginForm">
-                <input type="email" id="loginEmail" placeholder="Email" autocomplete="off">
+                <input type="email" id="loginEmail" placeholder="Email">
                 <input type="password" id="loginPassword" placeholder="Пароль">
                 <button class="comment-submit" id="submitLogin">Войти</button>
             </div>
@@ -851,8 +614,8 @@
         </div>
     </div>
 
-    <div id="mapModal" class="modal-map">
-        <div class="modal-map-content">
+    <div id="mapModal" class="modal">
+        <div class="modal-content">
             <button class="modal-close" onclick="closeMapModal()">&times;</button>
             <h3 id="mapModalTitle">📍 Место на карте</h3>
             <div id="mapModalInfo"></div>
@@ -861,7 +624,7 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // API конфигурация
+        // ========== API ==========
         const API_URL = '';
         let authToken = localStorage.getItem('token');
         let currentUser = null;
@@ -871,7 +634,6 @@
         let currentPage = 'main';
         let currentPlaceId = null;
 
-        // ========== API ВЫЗОВЫ ==========
         async function apiRequest(url, options = {}) {
             const headers = { 'Content-Type': 'application/json', ...options.headers };
             if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
@@ -887,7 +649,6 @@
             return data;
         }
 
-        // ========== АВТОРИЗАЦИЯ ==========
         async function register(email, password, name) {
             if (password.length < 6) { alert('Пароль должен быть не менее 6 символов'); return false; }
             const data = await apiRequest('/api/register', { method: 'POST', body: JSON.stringify({ email, password, name }) });
@@ -922,7 +683,6 @@
             renderCurrentPage();
         }
 
-        // ========== ЗАГРУЗКА ДАННЫХ ==========
         async function loadPlaces() {
             const data = await apiRequest('/api/places');
             if (data && !data.error) { placesData = data; renderCurrentPage(); }
@@ -933,7 +693,6 @@
             if (data && !data.error) { reviews = data; renderCurrentPage(); }
         }
 
-        // ========== ОТЗЫВЫ ==========
         async function addComment(placeId, text) {
             if (!currentUser) { showLoginModal(); return false; }
             if (!text.trim()) { alert('Введите текст отзыва!'); return false; }
@@ -962,7 +721,6 @@
             return false;
         }
 
-        // ========== UI ==========
         function updateUserUI() {
             if (currentUser) {
                 document.getElementById('userName').textContent = currentUser.name;
@@ -987,7 +745,6 @@
         function closeAuthModal() { document.getElementById('authModal').classList.remove('active'); }
         function closeMapModal() { document.getElementById('mapModal').classList.remove('active'); }
 
-        // ========== КАРТА ==========
         function initMap() {
             if (map) map.remove();
             if (!document.getElementById('map')) return;
@@ -1023,7 +780,6 @@
         function formatDate(date) { const d = new Date(date); return `${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}`; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
-        // ========== РЕНДЕР ГЛАВНОЙ ==========
         function renderMainPage() {
             const grid = document.getElementById('placesGrid');
             if (!grid) return;
@@ -1051,7 +807,6 @@
             `).join('');
         }
 
-        // ========== СТРАНИЦА ДЕТАЛЕЙ ==========
         window.showDetailPage = function(placeId) {
             const place = placesData.find(p => p.id === placeId);
             if (!place) return;
@@ -1060,10 +815,10 @@
             const html = `
                 <button class="back-btn" onclick="goBackToMain()">← На главную</button>
                 <div class="detail-page">
-                    <div class="detail-header">
+                    <div class="detail-header" style="background:linear-gradient(135deg, #6b5e3a, #7d6e46); color:white; padding:20px;">
                         <h2>${escapeHtml(place.name)}</h2>
                         <div>📍 ${escapeHtml(place.address)}</div>
-                        <div style="margin-top:5px;">📅 ${escapeHtml(place.year)}</div>
+                        <div>📅 ${escapeHtml(place.year)}</div>
                     </div>
                     <div class="detail-images">
                         <img src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
@@ -1076,10 +831,10 @@
                         <p>${escapeHtml(place.full_history)}</p>
                     </div>
                 </div>
-                <div class="comments-section">
+                <div class="comments-section" style="background:white; border-radius:28px; padding:24px; margin-top:28px;">
                     <div class="comments-title">💬 Отзывы (${placeReviews.length})</div>
-                    <div class="comment-form">
-                        <textarea id="detailCommentText_${place.id}" placeholder="Поделитесь впечатлениями..."></textarea>
+                    <div class="comment-form" style="background:#faf6ed; border-radius:20px; padding:20px; margin-bottom:24px;">
+                        <textarea id="detailCommentText_${place.id}" placeholder="Поделитесь впечатлениями..." style="width:100%; padding:12px; border-radius:16px; border:1px solid #e8dbbc; margin-bottom:12px;"></textarea>
                         <button class="comment-submit" onclick="submitDetailComment(${place.id})">📝 Отправить отзыв</button>
                     </div>
                     <div class="comments-list">
@@ -1089,21 +844,21 @@
                                 const isOwner = currentUser && review.user_id === currentUser.id;
                                 const isAdmin = currentUser && currentUser.is_admin === 1;
                                 return `
-                                    <div class="comment-item">
-                                        <div class="comment-header">
-                                            <div><span class="comment-author">${escapeHtml(review.user_name)}</span></div>
-                                            <div class="comment-date">${formatDate(review.created_at)}</div>
+                                    <div class="comment-item" style="background:#faf6ed; border-radius:20px; padding:16px; margin-bottom:16px; border-left:4px solid #6b5e3a;">
+                                        <div class="comment-header" style="display:flex; justify-content:space-between;">
+                                            <span class="comment-author">${escapeHtml(review.user_name)}</span>
+                                            <span class="comment-date">${formatDate(review.created_at)}</span>
                                         </div>
                                         <div class="comment-text">${escapeHtml(review.text)}${review.edited ? ' <span style="font-size:0.6em;">(ред.)</span>' : ''}</div>
-                                        <div class="comment-actions">
+                                        <div class="comment-actions" style="margin-top:10px;">
                                             <button class="comment-btn" onclick="showReplyForm(${review.id})">💬 Ответить</button>
                                             ${(isOwner || isAdmin) ? `<button class="comment-btn" onclick="editCommentPrompt(${review.id})">✏️ Ред.</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${review.id})">🗑️ Удалить</button>` : ''}
                                         </div>
-                                        <div id="replyForm-${review.id}" class="reply-form">
-                                            <textarea id="replyText-${review.id}" placeholder="Ваш ответ..."></textarea>
-                                            <button class="comment-submit" onclick="submitReply(${review.id})">Ответить</button>
+                                        <div id="replyForm-${review.id}" class="reply-form" style="display:none; margin-top:12px; padding-left:20px;">
+                                            <textarea id="replyText-${review.id}" placeholder="Ваш ответ..." style="width:100%; padding:10px; border-radius:14px;"></textarea>
+                                            <button class="comment-submit" style="margin-top:8px;" onclick="submitReply(${review.id})">Ответить</button>
                                         </div>
-                                        ${replies.length ? `<div class="replies">${replies.map(r => `<div class="reply-item"><strong>↳ ${escapeHtml(r.user_name)}</strong><div>${escapeHtml(r.text)}</div><div class="comment-date">${formatDate(r.created_at)}</div>${(currentUser && (r.user_id === currentUser.id || currentUser.is_admin === 1)) ? `<div><button class="comment-btn" onclick="editCommentPrompt(${r.id})">✏️</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${r.id})">🗑️</button></div>` : ''}</div>`).join('')}</div>` : ''}
+                                        ${replies.length ? `<div class="replies" style="margin-top:12px; padding-left:20px; border-left:2px solid #e8dbbc;">${replies.map(r => `<div class="reply-item" style="background:white; border-radius:16px; padding:12px; margin-top:10px;"><strong>↳ ${escapeHtml(r.user_name)}</strong><div>${escapeHtml(r.text)}</div><div class="comment-date">${formatDate(r.created_at)}</div>${(currentUser && (r.user_id === currentUser.id || currentUser.is_admin === 1)) ? `<div><button class="comment-btn" onclick="editCommentPrompt(${r.id})">✏️</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${r.id})">🗑️</button></div>` : ''}</div>`).join('')}</div>` : ''}
                                     </div>
                                 `;
                             }).join('')
@@ -1201,7 +956,7 @@
             }
         }
 
-        // ========== АДМИН-ПАНЕЛЬ ==========
+        // Админ
         async function showAdminPanel() {
             if (!currentUser || currentUser.is_admin !== 1) { alert('Доступ запрещен'); return; }
             document.getElementById('adminPanel').innerHTML = `
@@ -1257,7 +1012,6 @@
 
         function closeAdminPanel() { document.getElementById('adminModal').classList.remove('active'); }
 
-        // Глобальные функции
         window.showDetailPage = showDetailPage;
         window.showOnMap = showOnMap;
         window.goBackToMain = goBackToMain;
@@ -1272,7 +1026,6 @@
         window.closeAdminPanel = closeAdminPanel;
         window.closeAuthModal = closeAuthModal;
 
-        // Навигация
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
