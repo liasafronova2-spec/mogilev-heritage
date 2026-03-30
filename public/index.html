@@ -19,7 +19,6 @@
             line-height: 1.4;
         }
 
-        /* ===== ШАПКА ===== */
         .header {
             background: linear-gradient(135deg, #6b5e3a 0%, #5a4e2e 100%);
             color: white;
@@ -39,7 +38,6 @@
             opacity: 0.9;
         }
 
-        /* ===== ПОЛЬЗОВАТЕЛЬСКАЯ ПАНЕЛЬ ===== */
         .user-bar {
             background: white;
             padding: 12px 20px;
@@ -126,7 +124,6 @@
             background: #2c3e2f;
         }
 
-        /* ===== НАВИГАЦИЯ ===== */
         .nav-bar {
             background: white;
             padding: 12px 20px;
@@ -153,14 +150,12 @@
             color: white;
         }
 
-        /* ===== ОСНОВНОЙ КОНТЕЙНЕР ===== */
         .container {
             max-width: 1300px;
             margin: 0 auto;
             padding: 24px 20px;
         }
 
-        /* ===== СЕТКА КАРТОЧЕК ===== */
         .places-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -168,7 +163,6 @@
             margin-bottom: 40px;
         }
 
-        /* ===== КАРТОЧКА ===== */
         .place-card {
             background: white;
             border-radius: 24px;
@@ -198,7 +192,6 @@
             opacity: 0.9;
         }
 
-        /* Сравнение фото */
         .comparison-container {
             position: relative;
             height: 220px;
@@ -265,7 +258,6 @@
             line-height: 1.4;
         }
 
-        /* Кнопки карточки */
         .card-buttons {
             display: flex;
             gap: 12px;
@@ -297,7 +289,6 @@
             color: white;
         }
 
-        /* ===== КАРТА ===== */
         .map-section {
             background: white;
             border-radius: 28px;
@@ -325,7 +316,6 @@
             height: 100%;
         }
 
-        /* ===== СТРАНИЦА ДЕТАЛЕЙ ===== */
         .detail-page {
             background: white;
             border-radius: 28px;
@@ -387,7 +377,6 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        /* ===== ОТЗЫВЫ ===== */
         .comments-section {
             background: white;
             border-radius: 28px;
@@ -522,7 +511,6 @@
             margin-top: 10px;
         }
 
-        /* ===== МОДАЛЬНЫЕ ОКНА ===== */
         .modal-map, .modal {
             display: none;
             position: fixed;
@@ -613,7 +601,6 @@
             font-size: 0.9em;
         }
 
-        /* ===== АДМИН-ПАНЕЛЬ ===== */
         .admin-panel {
             background: linear-gradient(135deg, #2c3e2f, #1e2a1a);
             border-radius: 20px;
@@ -666,7 +653,6 @@
             cursor: pointer;
         }
 
-        /* ===== ФУТЕР ===== */
         .footer {
             background: #2c3e2f;
             color: white;
@@ -704,7 +690,6 @@
             opacity: 0.7;
         }
 
-        /* ===== АДАПТАЦИЯ ДЛЯ МОБИЛЬНЫХ ===== */
         @media (max-width: 768px) {
             .user-bar {
                 position: static;
@@ -1296,7 +1281,7 @@
         document.getElementById('logoutBtn').onclick = logout;
         document.getElementById('adminBtn').onclick = showAdminPanel;
         document.getElementById('closeAuthModal').onclick = closeAuthModal;
-        document.getElementById('closeAdmin').onclick = closeAdminPanel; // на случай если осталась
+        document.getElementById('closeAdmin').onclick = closeAdminPanel;
 
         // Переключение табов в модалке
         document.querySelectorAll('.modal-tab').forEach(tab => {
