@@ -765,13 +765,40 @@
             background: #c9302c;
         }
 
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #e8dbbc;
+            padding-bottom: 10px;
+        }
+
+        .admin-tab {
+            padding: 8px 16px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 0.9em;
+            border-radius: 20px;
+            transition: 0.2s;
+        }
+
+        .admin-tab.active {
+            background: #6b5e3a;
+            color: white;
+        }
+
+        .admin-tab:hover:not(.active) {
+            background: #e8e0d5;
+        }
+
         .admin-panel {
             background: #2c3e2f;
             border-radius: 20px;
             padding: 20px;
             margin-top: 20px;
             color: white;
-            max-height: 400px;
+            max-height: 500px;
             overflow-y: auto;
         }
 
@@ -814,6 +841,34 @@
             padding: 5px 12px;
             border-radius: 6px;
             cursor: pointer;
+        }
+
+        .logs-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            background: rgba(255,255,255,0.1);
+            padding: 10px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            font-size: 0.85em;
+        }
+
+        .log-item .log-date {
+            color: #c4b28a;
+            font-size: 0.7em;
+        }
+
+        .log-item .log-action {
+            font-weight: bold;
+            color: #ffc107;
+        }
+
+        .log-item .log-details {
+            margin-top: 4px;
+            color: #ddd;
         }
 
         .footer {
@@ -868,7 +923,7 @@
         .modal-content {
             background: white;
             border-radius: 28px;
-            max-width: 500px;
+            max-width: 600px;
             width: 90%;
             max-height: 85vh;
             overflow-y: auto;
@@ -938,6 +993,9 @@
                 width: 80px;
                 height: 80px;
             }
+            .admin-tabs {
+                flex-wrap: wrap;
+            }
         }
 
         @media (min-width: 769px) {
@@ -1002,6 +1060,10 @@
         <div class="modal-content">
             <button class="modal-close" onclick="closeAdminPanel()">&times;</button>
             <h3>👑 Админ-панель</h3>
+            <div class="admin-tabs">
+                <button class="admin-tab active" data-admin-tab="places">🏛️ Места</button>
+                <button class="admin-tab" data-admin-tab="logs">📋 Журнал действий</button>
+            </div>
             <div id="adminPanel"></div>
         </div>
     </div>
@@ -1022,10 +1084,10 @@
         let currentUser = null;
         let placesData = [];
         let reviews = [];
+        let logs = [];
         let map;
         let currentPage = 'main';
         let currentPlaceId = null;
-
         let userAvatar = localStorage.getItem('userAvatar') || null;
 
         function filterPlaces(data) {
@@ -1101,6 +1163,11 @@
         async function loadReviews() {
             const data = await apiRequest('/api/reviews');
             if (data && !data.error) { reviews = data; renderCurrentPage(); }
+        }
+
+        async function loadLogs() {
+            const data = await apiRequest('/api/admin/logs');
+            if (data && !data.error) { logs = data; }
         }
 
         async function addComment(placeId, text) {
@@ -1552,26 +1619,79 @@
         // Админ-панель
         async function showAdminPanel() {
             if (!currentUser || currentUser.is_admin !== 1) { alert('Доступ запрещен'); return; }
+            
+            await loadLogs();
+            
             document.getElementById('adminPanel').innerHTML = `
-                <h4>➕ Добавить место</h4>
-                <div class="admin-form">
-                    <input type="text" id="newName" placeholder="Название">
-                    <select id="newCategory"><option value="monument">🏛️ Памятник</option><option value="street">🛣️ Улица</option></select>
-                    <input type="text" id="newAddress" placeholder="Адрес">
-                    <input type="text" id="newLat" placeholder="Широта (lat)">
-                    <input type="text" id="newLng" placeholder="Долгота (lng)">
-                    <input type="text" id="newYear" placeholder="Год">
-                    <textarea id="newDesc" placeholder="Краткое описание" rows="2"></textarea>
-                    <textarea id="newHistory" placeholder="Полная история" rows="3"></textarea>
-                    <input type="text" id="newOldImg" placeholder="URL старого фото">
-                    <input type="text" id="newNewImg" placeholder="URL нового фото">
-                    <button class="admin-btn" onclick="adminAddPlace()">➕ Добавить</button>
+                <div id="adminPlacesPanel" style="display:block;">
+                    <h4>➕ Добавить место</h4>
+                    <div class="admin-form">
+                        <input type="text" id="newName" placeholder="Название">
+                        <select id="newCategory"><option value="monument">🏛️ Памятник</option><option value="street">🛣️ Улица</option></select>
+                        <input type="text" id="newAddress" placeholder="Адрес">
+                        <input type="text" id="newLat" placeholder="Широта (lat)">
+                        <input type="text" id="newLng" placeholder="Долгота (lng)">
+                        <input type="text" id="newYear" placeholder="Год">
+                        <textarea id="newDesc" placeholder="Краткое описание" rows="2"></textarea>
+                        <textarea id="newHistory" placeholder="Полная история" rows="3"></textarea>
+                        <input type="text" id="newOldImg" placeholder="URL старого фото">
+                        <input type="text" id="newNewImg" placeholder="URL нового фото">
+                        <button class="admin-btn" onclick="adminAddPlace()">➕ Добавить</button>
+                    </div>
+                    <h4 style="margin-top:15px;">📋 Существующие места</h4>
+                    <div id="placesList"></div>
                 </div>
-                <h4 style="margin-top:15px;">📋 Существующие места</h4>
-                <div id="placesList"></div>
+                <div id="adminLogsPanel" style="display:none;">
+                    <h4>📋 Журнал действий</h4>
+                    <div class="logs-list" id="logsList"></div>
+                </div>
             `;
+            
             renderPlacesList();
+            renderLogsList();
             document.getElementById('adminModal').style.display = 'flex';
+            
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    const tabName = tab.dataset.adminTab;
+                    if (tabName === 'places') {
+                        document.getElementById('adminPlacesPanel').style.display = 'block';
+                        document.getElementById('adminLogsPanel').style.display = 'none';
+                    } else if (tabName === 'logs') {
+                        document.getElementById('adminPlacesPanel').style.display = 'none';
+                        document.getElementById('adminLogsPanel').style.display = 'block';
+                        renderLogsList();
+                    }
+                });
+            });
+        }
+        
+        function renderLogsList() {
+            const container = document.getElementById('logsList');
+            if (!container) return;
+            if (!logs.length) {
+                container.innerHTML = '<div style="text-align:center; padding:20px;">Журнал действий пуст</div>';
+                return;
+            }
+            const actionIcons = {
+                'ADD_PLACE': '➕',
+                'DELETE_PLACE': '🗑️',
+                'EDIT_PLACE': '✏️',
+                'ADD_REVIEW': '💬',
+                'DELETE_REVIEW': '🗑️',
+                'EDIT_REVIEW': '✏️',
+                'LOGIN': '🔑',
+                'REGISTER': '📝'
+            };
+            container.innerHTML = logs.map(log => `
+                <div class="log-item">
+                    <div class="log-date">${formatDate(log.created_at)}</div>
+                    <div class="log-action">${actionIcons[log.action] || '📌'} ${log.action}</div>
+                    <div class="log-details">${escapeHtml(log.details || '')}</div>
+                </div>
+            `).join('');
         }
 
         async function adminAddPlace() {
@@ -1587,20 +1707,37 @@
             const new_image = document.getElementById('newNewImg').value;
             if (!name || !address || isNaN(lat) || isNaN(lng)) { alert('Заполните название, адрес и координаты!'); return; }
             const data = await apiRequest('/api/admin/places', { method: 'POST', body: JSON.stringify({ name, category, address, lat, lng, year, description, full_history, old_image, new_image }) });
-            if (data && data.id) { await loadPlaces(); renderPlacesList(); alert('Место добавлено!'); } else if (data && data.error) alert(data.error);
+            if (data && data.id) { 
+                await loadPlaces(); 
+                renderPlacesList(); 
+                await loadLogs();
+                renderLogsList();
+                alert('Место добавлено!'); 
+            } else if (data && data.error) alert(data.error);
         }
 
         async function adminDeletePlace(id) {
             if (confirm('Удалить место?')) {
                 const data = await apiRequest(`/api/admin/places/${id}`, { method: 'DELETE' });
-                if (data && data.message) { await loadPlaces(); renderPlacesList(); alert('Место удалено'); }
+                if (data && data.message) { 
+                    await loadPlaces(); 
+                    renderPlacesList(); 
+                    await loadLogs();
+                    renderLogsList();
+                    alert('Место удалено'); 
+                }
             }
         }
 
         function renderPlacesList() {
             const container = document.getElementById('placesList');
             if (!container) return;
-            container.innerHTML = placesData.map(p => `<div class="place-item"><span>${escapeHtml(p.name)}</span><button onclick="adminDeletePlace(${p.id})">🗑️ Удалить</button></div>`).join('');
+            container.innerHTML = placesData.map(p => `
+                <div class="place-item">
+                    <span>${escapeHtml(p.name)}</span>
+                    <button onclick="adminDeletePlace(${p.id})">🗑️ Удалить</button>
+                </div>
+            `).join('');
         }
 
         function closeAdminPanel() { document.getElementById('adminModal').style.display = 'none'; }
