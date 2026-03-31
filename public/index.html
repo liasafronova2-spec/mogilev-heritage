@@ -96,7 +96,7 @@
             flex-wrap: wrap;
         }
 
-        .login-btn, .logout-btn, .register-btn, .admin-btn-header, .profile-btn {
+        .login-btn, .register-btn, .admin-btn-header {
             background: #6b5e3a;
             color: white;
             border: none;
@@ -110,15 +110,11 @@
             text-align: center;
         }
 
-        .logout-btn {
-            background: #d9534f;
-        }
-
         .register-btn {
             background: #2c3e2f;
         }
 
-        .admin-btn-header, .profile-btn {
+        .admin-btn-header {
             background: #2c3e2f;
         }
 
@@ -502,7 +498,6 @@
             margin-top: 8px;
         }
 
-        /* Стили для страниц авторизации */
         .auth-page {
             max-width: 500px;
             margin: 40px auto;
@@ -631,7 +626,6 @@
             font-weight: 500;
         }
 
-        /* Стили для страницы профиля */
         .profile-page {
             max-width: 800px;
             margin: 40px auto;
@@ -972,7 +966,6 @@
         <div class="btn-group">
             <button class="login-btn" id="loginBtn">🔑 Войти</button>
             <button class="register-btn" id="registerBtn">📝 Регистрация</button>
-            <button class="logout-btn" id="logoutBtn" style="display:none;">🚪 Выйти</button>
             <button class="admin-btn-header" id="adminBtn" style="display:none;">👑 Админ</button>
         </div>
     </div>
@@ -1033,7 +1026,6 @@
         let currentPage = 'main';
         let currentPlaceId = null;
 
-        // Аватар пользователя
         let userAvatar = localStorage.getItem('userAvatar') || null;
 
         function filterPlaces(data) {
@@ -1085,8 +1077,10 @@
             if (!confirmLogout) return;
             await apiRequest('/api/logout', { method: 'POST' });
             localStorage.removeItem('token');
+            localStorage.removeItem('userAvatar');
             authToken = null;
             currentUser = null;
+            userAvatar = null;
             updateUserUI();
             renderCurrentPage();
         }
@@ -1142,7 +1136,6 @@
                 document.getElementById('userName').textContent = currentUser.name;
                 document.getElementById('userEmail').textContent = currentUser.email;
                 
-                // Обновляем аватар
                 if (userAvatar) {
                     document.getElementById('userAvatar').style.backgroundImage = `url(${userAvatar})`;
                     document.getElementById('userAvatar').style.backgroundSize = 'cover';
@@ -1154,7 +1147,6 @@
                 
                 document.getElementById('loginBtn').style.display = 'none';
                 document.getElementById('registerBtn').style.display = 'none';
-                document.getElementById('logoutBtn').style.display = 'block';
                 document.getElementById('adminBtn').style.display = currentUser.is_admin === 1 ? 'block' : 'none';
             } else {
                 document.getElementById('userName').textContent = 'Гость';
@@ -1163,12 +1155,10 @@
                 document.getElementById('userAvatar').textContent = '👤';
                 document.getElementById('loginBtn').style.display = 'block';
                 document.getElementById('registerBtn').style.display = 'block';
-                document.getElementById('logoutBtn').style.display = 'none';
                 document.getElementById('adminBtn').style.display = 'none';
             }
         }
 
-        // Функция для загрузки аватара
         function uploadAvatar() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -1181,7 +1171,6 @@
                         userAvatar = event.target.result;
                         localStorage.setItem('userAvatar', userAvatar);
                         updateUserUI();
-                        // Если на странице профиля, обновляем и там
                         if (document.getElementById('profileAvatarImg')) {
                             const avatarImg = document.getElementById('profileAvatarImg');
                             if (avatarImg) {
@@ -1197,7 +1186,6 @@
             input.click();
         }
 
-        // Страница профиля
         function showProfilePage() {
             if (!currentUser) {
                 showLoginPage();
@@ -1237,13 +1225,12 @@
                         </div>
                     </div>
                     
-                    <button class="profile-logout-btn" onclick="logoutAndGoHome()">🚪 Выйти из аккаунта</button>
+                    <button class="profile-logout-btn" onclick="logout()">🚪 Выйти из аккаунта</button>
                 </div>
             `;
             document.getElementById('app').innerHTML = profileHtml;
             window.scrollTo(0, 0);
             
-            // Обновляем отображение аватара в профиле
             if (userAvatar) {
                 const avatarDiv = document.getElementById('profileAvatarImg');
                 if (avatarDiv) {
@@ -1253,21 +1240,7 @@
                 }
             }
         }
-        
-        async function logoutAndGoHome() {
-            const confirmLogout = confirm('Вы действительно хотите выйти из аккаунта?');
-            if (!confirmLogout) return;
-            await apiRequest('/api/logout', { method: 'POST' });
-            localStorage.removeItem('token');
-            localStorage.removeItem('userAvatar');
-            authToken = null;
-            currentUser = null;
-            userAvatar = null;
-            updateUserUI();
-            renderCurrentPage();
-        }
 
-        // ========== СТРАНИЦЫ АВТОРИЗАЦИИ ==========
         function showLoginPage() {
             const loginHtml = `
                 <div class="auth-page">
@@ -1359,7 +1332,6 @@
             await requestPasswordReset(email);
         }
 
-        // ========== ОСТАЛЬНОЙ ФУНКЦИОНАЛ ==========
         function initMap() {
             if (map) map.remove();
             if (!document.getElementById('map')) return;
@@ -1652,7 +1624,7 @@
         window.submitResetPassword = submitResetPassword;
         window.showProfilePage = showProfilePage;
         window.uploadAvatar = uploadAvatar;
-        window.logoutAndGoHome = logoutAndGoHome;
+        window.logout = logout;
 
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -1668,7 +1640,6 @@
 
         document.getElementById('loginBtn').onclick = showLoginPage;
         document.getElementById('registerBtn').onclick = showRegisterPage;
-        document.getElementById('logoutBtn').onclick = logout;
         document.getElementById('adminBtn').onclick = showAdminPanel;
         document.getElementById('userInfoBtn').onclick = () => {
             if (currentUser) {
@@ -1684,7 +1655,6 @@
                 if (data && data.user) { currentUser = data.user; updateUserUI(); }
                 else { authToken = null; localStorage.removeItem('token'); }
             }
-            // Загружаем аватар из localStorage
             const savedAvatar = localStorage.getItem('userAvatar');
             if (savedAvatar) {
                 userAvatar = savedAvatar;
