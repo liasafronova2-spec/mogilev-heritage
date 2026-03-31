@@ -798,7 +798,7 @@
             padding: 20px;
             margin-top: 20px;
             color: white;
-            max-height: 500px;
+            max-height: 550px;
             overflow-y: auto;
         }
 
@@ -905,6 +905,11 @@
             cursor: pointer;
         }
 
+        .place-item .edit-btn {
+            background: #ffc107;
+            color: #4a3b2c;
+        }
+
         .logs-list {
             max-height: 400px;
             overflow-y: auto;
@@ -985,7 +990,7 @@
         .modal-content {
             background: white;
             border-radius: 28px;
-            max-width: 600px;
+            max-width: 650px;
             width: 90%;
             max-height: 85vh;
             overflow-y: auto;
@@ -1130,6 +1135,14 @@
         </div>
     </div>
 
+    <div id="editPlaceModal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeEditModal()">&times;</button>
+            <h3>✏️ Редактировать место</h3>
+            <div id="editPlaceForm"></div>
+        </div>
+    </div>
+
     <div id="mapModal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="closeMapModal()">&times;</button>
@@ -1155,10 +1168,13 @@
         // Переменные для загрузки фото
         let selectedOldImage = null;
         let selectedNewImage = null;
+        let editSelectedOldImage = null;
+        let editSelectedNewImage = null;
+        let editPlaceId = null;
         let oldImageQuality = 80;
         let newImageQuality = 80;
-        let oldImagePreviewData = null;
-        let newImagePreviewData = null;
+        let editOldImageQuality = 80;
+        let editNewImageQuality = 80;
 
         function filterPlaces(data) {
             return data.filter(p => p.category !== 'building');
@@ -1371,14 +1387,13 @@
                 alert('Только администратор может загружать фото');
                 return;
             }
-            const quality = oldImageQuality;
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
             input.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const compressed = await compressImage(file, quality);
+                    const compressed = await compressImage(file, oldImageQuality);
                     selectedOldImage = compressed;
                     const preview = document.getElementById('oldImagePreview');
                     if (preview) {
@@ -1394,18 +1409,62 @@
                 alert('Только администратор может загружать фото');
                 return;
             }
-            const quality = newImageQuality;
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
             input.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const compressed = await compressImage(file, quality);
+                    const compressed = await compressImage(file, newImageQuality);
                     selectedNewImage = compressed;
                     const preview = document.getElementById('newImagePreview');
                     if (preview) {
                         preview.innerHTML = `<img src="${selectedNewImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
+                    }
+                }
+            };
+            input.click();
+        }
+
+        // Функции для редактирования фото
+        async function uploadEditOldImage() {
+            if (!currentUser || currentUser.is_admin !== 1) {
+                alert('Только администратор может загружать фото');
+                return;
+            }
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const compressed = await compressImage(file, editOldImageQuality);
+                    editSelectedOldImage = compressed;
+                    const preview = document.getElementById('editOldImagePreview');
+                    if (preview) {
+                        preview.innerHTML = `<img src="${editSelectedOldImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
+                    }
+                }
+            };
+            input.click();
+        }
+
+        async function uploadEditNewImage() {
+            if (!currentUser || currentUser.is_admin !== 1) {
+                alert('Только администратор может загружать фото');
+                return;
+            }
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const compressed = await compressImage(file, editNewImageQuality);
+                    editSelectedNewImage = compressed;
+                    const preview = document.getElementById('editNewImagePreview');
+                    if (preview) {
+                        preview.innerHTML = `<img src="${editSelectedNewImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
                     }
                 }
             };
@@ -1422,6 +1481,16 @@
             document.getElementById('newQualityValue').textContent = newImageQuality + '%';
         }
 
+        function updateEditOldQuality(value) {
+            editOldImageQuality = parseInt(value);
+            document.getElementById('editOldQualityValue').textContent = editOldImageQuality + '%';
+        }
+
+        function updateEditNewQuality(value) {
+            editNewImageQuality = parseInt(value);
+            document.getElementById('editNewQualityValue').textContent = editNewImageQuality + '%';
+        }
+
         function clearImagePreviews() {
             selectedOldImage = null;
             selectedNewImage = null;
@@ -1429,6 +1498,118 @@
             const newPreview = document.getElementById('newImagePreview');
             if (oldPreview) oldPreview.innerHTML = '';
             if (newPreview) newPreview.innerHTML = '';
+        }
+
+        function clearEditImagePreviews() {
+            editSelectedOldImage = null;
+            editSelectedNewImage = null;
+            const oldPreview = document.getElementById('editOldImagePreview');
+            const newPreview = document.getElementById('editNewImagePreview');
+            if (oldPreview) oldPreview.innerHTML = '';
+            if (newPreview) newPreview.innerHTML = '';
+        }
+
+        // Редактирование места
+        async function showEditPlaceModal(placeId) {
+            if (!currentUser || currentUser.is_admin !== 1) {
+                alert('Доступ запрещен');
+                return;
+            }
+            
+            const place = placesData.find(p => p.id === placeId);
+            if (!place) return;
+            
+            editPlaceId = placeId;
+            editSelectedOldImage = null;
+            editSelectedNewImage = null;
+            editOldImageQuality = 80;
+            editNewImageQuality = 80;
+            
+            const editFormHtml = `
+                <div class="admin-form">
+                    <input type="text" id="editName" value="${escapeHtml(place.name)}" placeholder="Название">
+                    <select id="editCategory">
+                        <option value="monument" ${place.category === 'monument' ? 'selected' : ''}>🏛️ Памятник</option>
+                        <option value="street" ${place.category === 'street' ? 'selected' : ''}>🛣️ Улица</option>
+                    </select>
+                    <input type="text" id="editAddress" value="${escapeHtml(place.address)}" placeholder="Адрес">
+                    <input type="text" id="editLat" value="${place.lat}" placeholder="Широта (lat)">
+                    <input type="text" id="editLng" value="${place.lng}" placeholder="Долгота (lng)">
+                    <input type="text" id="editYear" value="${escapeHtml(place.year || '')}" placeholder="Год">
+                    <textarea id="editDesc" placeholder="Краткое описание" rows="2">${escapeHtml(place.description || '')}</textarea>
+                    <textarea id="editHistory" placeholder="Полная история" rows="3">${escapeHtml(place.full_history || '')}</textarea>
+                    
+                    <div class="image-preview-area">
+                        <div><strong>Текущее фото "ТОГДА":</strong></div>
+                        ${place.old_image ? `<img src="${place.old_image}" style="max-width:150px; max-height:100px; margin:5px 0; border-radius:8px;">` : '<div>Нет фото</div>'}
+                        <div class="file-input-label" onclick="uploadEditOldImage()">📷 Заменить фото ТОГДА</div>
+                        <div class="compress-control">
+                            <label>📊 Качество сжатия: <span id="editOldQualityValue">80</span>%</label>
+                            <input type="range" min="50" max="100" value="80" oninput="updateEditOldQuality(this.value)">
+                        </div>
+                        <div id="editOldImagePreview" class="image-preview"></div>
+                    </div>
+                    
+                    <div class="image-preview-area">
+                        <div><strong>Текущее фото "СЕЙЧАС":</strong></div>
+                        ${place.new_image ? `<img src="${place.new_image}" style="max-width:150px; max-height:100px; margin:5px 0; border-radius:8px;">` : '<div>Нет фото</div>'}
+                        <div class="file-input-label" onclick="uploadEditNewImage()">📸 Заменить фото СЕЙЧАС</div>
+                        <div class="compress-control">
+                            <label>📊 Качество сжатия: <span id="editNewQualityValue">80</span>%</label>
+                            <input type="range" min="50" max="100" value="80" oninput="updateEditNewQuality(this.value)">
+                        </div>
+                        <div id="editNewImagePreview" class="image-preview"></div>
+                    </div>
+                    
+                    <button class="admin-btn" onclick="saveEditedPlace()">💾 Сохранить изменения</button>
+                </div>
+            `;
+            
+            document.getElementById('editPlaceForm').innerHTML = editFormHtml;
+            document.getElementById('editPlaceModal').style.display = 'flex';
+        }
+
+        async function saveEditedPlace() {
+            if (!currentUser || currentUser.is_admin !== 1) {
+                alert('Доступ запрещен');
+                return;
+            }
+            
+            const name = document.getElementById('editName').value;
+            const category = document.getElementById('editCategory').value;
+            const address = document.getElementById('editAddress').value;
+            const lat = parseFloat(document.getElementById('editLat').value);
+            const lng = parseFloat(document.getElementById('editLng').value);
+            const year = document.getElementById('editYear').value;
+            const description = document.getElementById('editDesc').value;
+            const full_history = document.getElementById('editHistory').value;
+            
+            if (!name || !address || isNaN(lat) || isNaN(lng)) {
+                alert('Заполните название, адрес и координаты!');
+                return;
+            }
+            
+            const old_image = editSelectedOldImage || null;
+            const new_image = editSelectedNewImage || null;
+            
+            const data = await apiRequest(`/api/admin/places/${editPlaceId}`, {
+                method: 'PUT',
+                body: JSON.stringify({ name, category, address, lat, lng, year, description, full_history, old_image, new_image })
+            });
+            
+            if (data && data.message) {
+                await loadPlaces();
+                clearEditImagePreviews();
+                closeEditModal();
+                alert('Место обновлено!');
+            } else if (data && data.error) {
+                alert(data.error);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editPlaceModal').style.display = 'none';
+            clearEditImagePreviews();
         }
 
         function showProfilePage() {
@@ -1794,7 +1975,7 @@
             }
         }
 
-        // Админ-панель с загрузкой фото через галерею (только для админа)
+        // Админ-панель с редактированием мест
         async function showAdminPanel() {
             if (!currentUser || currentUser.is_admin !== 1) { 
                 alert('Доступ запрещен. Только для администратора'); 
@@ -1822,9 +2003,8 @@
                         <div class="image-preview-area">
                             <div class="file-input-label" onclick="uploadOldImage()">📷 Загрузить фото ТОГДА</div>
                             <div class="compress-control">
-                                <label>📊 Качество сжатия для фото "ТОГДА": <span id="oldQualityValue">80</span>%</label>
+                                <label>📊 Качество сжатия: <span id="oldQualityValue">80</span>%</label>
                                 <input type="range" min="50" max="100" value="80" oninput="updateOldQuality(this.value)">
-                                <span>⬅️ Меньше размер | Качество лучше ➡️</span>
                             </div>
                             <div id="oldImagePreview" class="image-preview"></div>
                         </div>
@@ -1832,9 +2012,8 @@
                         <div class="image-preview-area">
                             <div class="file-input-label" onclick="uploadNewImage()">📸 Загрузить фото СЕЙЧАС</div>
                             <div class="compress-control">
-                                <label>📊 Качество сжатия для фото "СЕЙЧАС": <span id="newQualityValue">80</span>%</label>
+                                <label>📊 Качество сжатия: <span id="newQualityValue">80</span>%</label>
                                 <input type="range" min="50" max="100" value="80" oninput="updateNewQuality(this.value)">
-                                <span>⬅️ Меньше размер | Качество лучше ➡️</span>
                             </div>
                             <div id="newImagePreview" class="image-preview"></div>
                         </div>
@@ -1881,6 +2060,7 @@
             const actionIcons = {
                 'ADD_PLACE': '➕',
                 'DELETE_PLACE': '🗑️',
+                'EDIT_PLACE': '✏️',
                 'ADD_REVIEW': '💬',
                 'DELETE_REVIEW': '🗑️',
                 'EDIT_REVIEW': '✏️',
@@ -1941,8 +2121,8 @@
                 // Сбрасываем качество
                 oldImageQuality = 80;
                 newImageQuality = 80;
-                const oldSlider = document.querySelector('#oldQualityValue');
-                const newSlider = document.querySelector('#newQualityValue');
+                const oldSlider = document.getElementById('oldQualityValue');
+                const newSlider = document.getElementById('newQualityValue');
                 if (oldSlider) oldSlider.textContent = '80';
                 if (newSlider) newSlider.textContent = '80';
             } else if (data && data.error) alert(data.error);
@@ -1971,7 +2151,10 @@
             container.innerHTML = placesData.map(p => `
                 <div class="place-item">
                     <span>${escapeHtml(p.name)}</span>
-                    <button onclick="adminDeletePlace(${p.id})">🗑️ Удалить</button>
+                    <div>
+                        <button class="edit-btn" onclick="showEditPlaceModal(${p.id})">✏️ Редактировать</button>
+                        <button onclick="adminDeletePlace(${p.id})">🗑️ Удалить</button>
+                    </div>
                 </div>
             `).join('');
         }
@@ -2002,8 +2185,15 @@
         window.uploadAvatar = uploadAvatar;
         window.uploadOldImage = uploadOldImage;
         window.uploadNewImage = uploadNewImage;
+        window.uploadEditOldImage = uploadEditOldImage;
+        window.uploadEditNewImage = uploadEditNewImage;
         window.updateOldQuality = updateOldQuality;
         window.updateNewQuality = updateNewQuality;
+        window.updateEditOldQuality = updateEditOldQuality;
+        window.updateEditNewQuality = updateEditNewQuality;
+        window.showEditPlaceModal = showEditPlaceModal;
+        window.saveEditedPlace = saveEditedPlace;
+        window.closeEditModal = closeEditModal;
         window.logout = logout;
 
         document.querySelectorAll('.nav-link').forEach(link => {
