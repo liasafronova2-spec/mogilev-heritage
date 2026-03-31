@@ -9,15 +9,25 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'mogilev-secret-key-2026';
 
+// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' })); // Увеличиваем лимит для base64 изображений
 app.use(express.static('public'));
 
 // База данных
 const db = new sqlite3.Database('./database.sqlite');
 
+// Функция для логирования действий
+function logActivity(userId, action, details) {
+    db.run("INSERT INTO activity_logs (user_id, action, details) VALUES (?, ?, ?)",
+        [userId, action, details], (err) => {
+            if (err) console.error('Ошибка логирования:', err.message);
+        });
+}
+
 // Создание таблиц
 db.serialize(() => {
+    // Таблица пользователей
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -27,6 +37,7 @@ db.serialize(() => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // Таблица мест (памятники, улицы)
     db.run(`CREATE TABLE IF NOT EXISTS places (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -42,6 +53,7 @@ db.serialize(() => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // Таблица отзывов
     db.run(`CREATE TABLE IF NOT EXISTS reviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         place_id INTEGER NOT NULL,
@@ -52,9 +64,11 @@ db.serialize(() => {
         edited BOOLEAN DEFAULT 0,
         edited_at DATETIME,
         FOREIGN KEY (place_id) REFERENCES places(id) ON DELETE CASCADE,
-        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (parent_id) REFERENCES reviews(id) ON DELETE CASCADE
     )`);
 
+    // Таблица логов действий
     db.run(`CREATE TABLE IF NOT EXISTS activity_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -64,12 +78,6 @@ db.serialize(() => {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     )`);
 });
-
-// Функция для логирования действий
-function logActivity(userId, action, details) {
-    db.run("INSERT INTO activity_logs (user_id, action, details) VALUES (?, ?, ?)",
-        [userId, action, details]);
-}
 
 // Создание администратора
 bcrypt.hash('admin2026', 10, (err, hash) => {
@@ -356,7 +364,7 @@ app.delete('/api/reviews/:id', (req, res) => {
     });
 });
 
-// Админ: добавить место
+// Админ: добавить место (с поддержкой base64 изображений)
 app.post('/api/admin/places', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) {
@@ -392,6 +400,39 @@ app.post('/api/admin/places', (req, res) => {
     });
 });
 
+// Админ: обновить место
+app.put('/api/admin/places/:id', (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).json({ error: 'Требуется авторизация' });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: 'Неверный токен' });
+        }
+        if (user.is_admin !== 1) {
+            return res.status(403).json({ error: 'Требуются права администратора' });
+        }
+        
+        const { name, category, address, lat, lng, year, description, full_history, old_image, new_image } = req.body;
+        const placeId = req.params.id;
+        
+        db.run(`UPDATE places SET name=?, category=?, address=?, lat=?, lng=?, year=?, description=?, full_history=?, old_image=?, new_image=?
+                WHERE id=?`,
+            [name, category, address, lat, lng, year, description, full_history, old_image, new_image, placeId],
+            function(err) {
+                if (err) {
+                    return res.status(500).json({ error: err.message });
+                }
+                logActivity(user.id, 'EDIT_PLACE', `Обновлено место: ${name}`);
+                res.json({ message: 'Место обновлено' });
+            }
+        );
+    });
+});
+
 // Админ: удалить место
 app.delete('/api/admin/places/:id', (req, res) => {
     const authHeader = req.headers.authorization;
@@ -417,6 +458,7 @@ app.delete('/api/admin/places/:id', (req, res) => {
                 if (err) {
                     return res.status(500).json({ error: err.message });
                 }
+                // Удаляем также отзывы к этому месту (CASCADE сделает это автоматически)
                 res.json({ message: 'Место удалено' });
             });
         });
@@ -454,6 +496,39 @@ app.get('/api/admin/logs', (req, res) => {
     });
 });
 
+// Админ: получить статистику
+app.get('/api/admin/stats', (req, res) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).json({ error: 'Требуется авторизация' });
+    }
+    
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, JWT_SECRET, (err, user) => {
+        if (err) {
+            return res.status(403).json({ error: 'Неверный токен' });
+        }
+        if (user.is_admin !== 1) {
+            return res.status(403).json({ error: 'Доступ запрещен' });
+        }
+        
+        db.get("SELECT COUNT(*) as users FROM users", [], (err, users) => {
+            db.get("SELECT COUNT(*) as places FROM places", [], (err, places) => {
+                db.get("SELECT COUNT(*) as reviews FROM reviews", [], (err, reviews) => {
+                    db.get("SELECT COUNT(*) as logs FROM activity_logs", [], (err, logs) => {
+                        res.json({
+                            users: users?.users || 0,
+                            places: places?.places || 0,
+                            reviews: reviews?.reviews || 0,
+                            logs: logs?.logs || 0
+                        });
+                    });
+                });
+            });
+        });
+    });
+});
+
 // Выход
 app.post('/api/logout', (req, res) => {
     res.json({ message: 'Выход выполнен' });
@@ -463,5 +538,6 @@ app.post('/api/logout', (req, res) => {
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Сервер запущен!`);
     console.log(`📱 Локально: http://localhost:${PORT}`);
-    console.log(`🔑 Админ: admin@mogilev.by / admin2026\n`);
+    console.log(`🔑 Админ: admin@mogilev.by / admin2026`);
+    console.log(`📸 Поддержка base64 изображений включена\n`);
 });
