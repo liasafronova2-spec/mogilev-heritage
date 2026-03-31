@@ -55,6 +55,7 @@
             align-items: center;
             gap: 12px;
             flex-wrap: wrap;
+            cursor: pointer;
         }
 
         .user-avatar {
@@ -69,6 +70,8 @@
             font-weight: bold;
             font-size: 1.3em;
             flex-shrink: 0;
+            background-size: cover;
+            background-position: center;
         }
 
         .user-details {
@@ -93,7 +96,7 @@
             flex-wrap: wrap;
         }
 
-        .login-btn, .logout-btn, .register-btn, .admin-btn-header {
+        .login-btn, .logout-btn, .register-btn, .admin-btn-header, .profile-btn {
             background: #6b5e3a;
             color: white;
             border: none;
@@ -115,7 +118,7 @@
             background: #2c3e2f;
         }
 
-        .admin-btn-header {
+        .admin-btn-header, .profile-btn {
             background: #2c3e2f;
         }
 
@@ -499,7 +502,7 @@
             margin-top: 8px;
         }
 
-        /* Стили для страниц авторизации (обновлённые) */
+        /* Стили для страниц авторизации */
         .auth-page {
             max-width: 500px;
             margin: 40px auto;
@@ -626,6 +629,146 @@
             text-decoration: underline;
             cursor: pointer;
             font-weight: 500;
+        }
+
+        /* Стили для страницы профиля */
+        .profile-page {
+            max-width: 800px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 32px;
+            padding: 32px;
+            box-shadow: 0 12px 32px rgba(0,0,0,0.1);
+            position: relative;
+        }
+
+        .profile-page .close-profile {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            font-size: 28px;
+            cursor: pointer;
+            color: #999;
+            background: none;
+            border: none;
+        }
+
+        .profile-page .close-profile:hover {
+            color: #6b5e3a;
+        }
+
+        .profile-header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .profile-avatar {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 16px;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .profile-avatar img, .profile-avatar .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background: linear-gradient(135deg, #6b5e3a, #7d6e46);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3em;
+            color: white;
+        }
+
+        .avatar-upload {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: #6b5e3a;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: white;
+            font-size: 18px;
+        }
+
+        .profile-name {
+            font-size: 1.8em;
+            color: #6b5e3a;
+            margin-bottom: 8px;
+        }
+
+        .profile-email {
+            color: #8b7a62;
+            margin-bottom: 16px;
+        }
+
+        .profile-section {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e8dbbc;
+        }
+
+        .profile-section h3 {
+            color: #6b5e3a;
+            margin-bottom: 16px;
+            font-size: 1.2em;
+        }
+
+        .profile-comments {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .profile-comment-item {
+            background: #faf6ed;
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 12px;
+            border-left: 3px solid #6b5e3a;
+        }
+
+        .profile-comment-place {
+            font-weight: bold;
+            color: #6b5e3a;
+            margin-bottom: 4px;
+        }
+
+        .profile-comment-text {
+            color: #5a4e3a;
+            font-size: 0.9em;
+            line-height: 1.4;
+        }
+
+        .profile-comment-date {
+            font-size: 0.7em;
+            color: #999;
+            margin-top: 6px;
+        }
+
+        .profile-logout-btn {
+            width: 100%;
+            padding: 14px;
+            background: #d9534f;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 24px;
+            transition: 0.2s;
+        }
+
+        .profile-logout-btn:hover {
+            background: #c9302c;
         }
 
         .admin-panel {
@@ -789,13 +932,17 @@
             .header h1 {
                 font-size: 1.3em;
             }
-            .auth-page {
+            .auth-page, .profile-page {
                 margin: 20px;
                 padding: 32px 24px;
             }
             .auth-page .button-group {
                 flex-direction: column;
                 gap: 12px;
+            }
+            .profile-avatar {
+                width: 80px;
+                height: 80px;
             }
         }
 
@@ -815,7 +962,7 @@
     </div>
 
     <div class="user-bar">
-        <div class="user-info">
+        <div class="user-info" id="userInfoBtn">
             <div class="user-avatar" id="userAvatar">👤</div>
             <div>
                 <div class="user-name" id="userName">Гость</div>
@@ -885,6 +1032,9 @@
         let map;
         let currentPage = 'main';
         let currentPlaceId = null;
+
+        // Аватар пользователя
+        let userAvatar = localStorage.getItem('userAvatar') || null;
 
         function filterPlaces(data) {
             return data.filter(p => p.category !== 'building');
@@ -991,7 +1141,17 @@
             if (currentUser) {
                 document.getElementById('userName').textContent = currentUser.name;
                 document.getElementById('userEmail').textContent = currentUser.email;
-                document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+                
+                // Обновляем аватар
+                if (userAvatar) {
+                    document.getElementById('userAvatar').style.backgroundImage = `url(${userAvatar})`;
+                    document.getElementById('userAvatar').style.backgroundSize = 'cover';
+                    document.getElementById('userAvatar').textContent = '';
+                } else {
+                    document.getElementById('userAvatar').style.backgroundImage = '';
+                    document.getElementById('userAvatar').textContent = currentUser.name.charAt(0).toUpperCase();
+                }
+                
                 document.getElementById('loginBtn').style.display = 'none';
                 document.getElementById('registerBtn').style.display = 'none';
                 document.getElementById('logoutBtn').style.display = 'block';
@@ -999,6 +1159,7 @@
             } else {
                 document.getElementById('userName').textContent = 'Гость';
                 document.getElementById('userEmail').textContent = 'Войдите, чтобы писать отзывы';
+                document.getElementById('userAvatar').style.backgroundImage = '';
                 document.getElementById('userAvatar').textContent = '👤';
                 document.getElementById('loginBtn').style.display = 'block';
                 document.getElementById('registerBtn').style.display = 'block';
@@ -1007,7 +1168,106 @@
             }
         }
 
-        // ========== СТРАНИЦЫ АВТОРИЗАЦИИ (НОВЫЙ ДИЗАЙН) ==========
+        // Функция для загрузки аватара
+        function uploadAvatar() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (event) => {
+                        userAvatar = event.target.result;
+                        localStorage.setItem('userAvatar', userAvatar);
+                        updateUserUI();
+                        // Если на странице профиля, обновляем и там
+                        if (document.getElementById('profileAvatarImg')) {
+                            const avatarImg = document.getElementById('profileAvatarImg');
+                            if (avatarImg) {
+                                avatarImg.style.backgroundImage = `url(${userAvatar})`;
+                                avatarImg.style.backgroundSize = 'cover';
+                                avatarImg.textContent = '';
+                            }
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        }
+
+        // Страница профиля
+        function showProfilePage() {
+            if (!currentUser) {
+                showLoginPage();
+                return;
+            }
+            
+            const userReviews = reviews.filter(r => r.user_id === currentUser.id && !r.parent_id);
+            const placesMap = {};
+            placesData.forEach(p => { placesMap[p.id] = p.name; });
+            
+            const profileHtml = `
+                <div class="profile-page">
+                    <button class="close-profile" onclick="goBackToMain()">&times;</button>
+                    <div class="profile-header">
+                        <div class="profile-avatar">
+                            <div class="avatar-img" id="profileAvatarImg" onclick="uploadAvatar()" style="background: linear-gradient(135deg, #6b5e3a, #7d6e46); display: flex; align-items: center; justify-content: center; font-size: 3em; color: white; cursor: pointer;">
+                                ${userAvatar ? '' : (currentUser ? currentUser.name.charAt(0).toUpperCase() : '👤')}
+                            </div>
+                            <div class="avatar-upload" onclick="uploadAvatar()">📷</div>
+                        </div>
+                        <div class="profile-name">${escapeHtml(currentUser.name)}</div>
+                        <div class="profile-email">${escapeHtml(currentUser.email)}</div>
+                    </div>
+                    
+                    <div class="profile-section">
+                        <h3>📝 Мои отзывы (${userReviews.length})</h3>
+                        <div class="profile-comments">
+                            ${userReviews.length === 0 ? '<div style="text-align:center; padding:20px; color:#999;">У вас пока нет отзывов</div>' : 
+                                userReviews.slice().reverse().map(review => `
+                                    <div class="profile-comment-item">
+                                        <div class="profile-comment-place">📍 ${escapeHtml(placesMap[review.place_id] || 'Место')}</div>
+                                        <div class="profile-comment-text">${escapeHtml(review.text)}</div>
+                                        <div class="profile-comment-date">${formatDate(review.created_at)}</div>
+                                    </div>
+                                `).join('')
+                            }
+                        </div>
+                    </div>
+                    
+                    <button class="profile-logout-btn" onclick="logoutAndGoHome()">🚪 Выйти из аккаунта</button>
+                </div>
+            `;
+            document.getElementById('app').innerHTML = profileHtml;
+            window.scrollTo(0, 0);
+            
+            // Обновляем отображение аватара в профиле
+            if (userAvatar) {
+                const avatarDiv = document.getElementById('profileAvatarImg');
+                if (avatarDiv) {
+                    avatarDiv.style.backgroundImage = `url(${userAvatar})`;
+                    avatarDiv.style.backgroundSize = 'cover';
+                    avatarDiv.textContent = '';
+                }
+            }
+        }
+        
+        async function logoutAndGoHome() {
+            const confirmLogout = confirm('Вы действительно хотите выйти из аккаунта?');
+            if (!confirmLogout) return;
+            await apiRequest('/api/logout', { method: 'POST' });
+            localStorage.removeItem('token');
+            localStorage.removeItem('userAvatar');
+            authToken = null;
+            currentUser = null;
+            userAvatar = null;
+            updateUserUI();
+            renderCurrentPage();
+        }
+
+        // ========== СТРАНИЦЫ АВТОРИЗАЦИИ ==========
         function showLoginPage() {
             const loginHtml = `
                 <div class="auth-page">
@@ -1099,7 +1359,7 @@
             await requestPasswordReset(email);
         }
 
-        // ========== ОСТАЛЬНОЙ ФУНКЦИОНАЛ (БЕЗ ИЗМЕНЕНИЙ) ==========
+        // ========== ОСТАЛЬНОЙ ФУНКЦИОНАЛ ==========
         function initMap() {
             if (map) map.remove();
             if (!document.getElementById('map')) return;
@@ -1390,6 +1650,9 @@
         window.submitLoginPage = submitLoginPage;
         window.submitRegisterPage = submitRegisterPage;
         window.submitResetPassword = submitResetPassword;
+        window.showProfilePage = showProfilePage;
+        window.uploadAvatar = uploadAvatar;
+        window.logoutAndGoHome = logoutAndGoHome;
 
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -1407,12 +1670,24 @@
         document.getElementById('registerBtn').onclick = showRegisterPage;
         document.getElementById('logoutBtn').onclick = logout;
         document.getElementById('adminBtn').onclick = showAdminPanel;
+        document.getElementById('userInfoBtn').onclick = () => {
+            if (currentUser) {
+                showProfilePage();
+            } else {
+                showLoginPage();
+            }
+        };
 
         async function init() {
             if (authToken) {
                 const data = await apiRequest('/api/me');
                 if (data && data.user) { currentUser = data.user; updateUserUI(); }
                 else { authToken = null; localStorage.removeItem('token'); }
+            }
+            // Загружаем аватар из localStorage
+            const savedAvatar = localStorage.getItem('userAvatar');
+            if (savedAvatar) {
+                userAvatar = savedAvatar;
             }
             await loadPlaces();
             await loadReviews();
