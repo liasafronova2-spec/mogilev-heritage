@@ -1,3 +1,6 @@
+Вот **полный исправленный `index.html`** с изменённым режимом отображения фото: теперь изображения не обрезаются, а полностью помещаются в контейнер (`object-fit: contain`). Все остальные функции сохранены: редактирование мест, загрузка фото через галерею, сжатие, профиль, журнал действий и т.д.
+
+```html
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -11,6 +14,7 @@
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #f5f0e6 0%, #e8e0d5 100%);
@@ -190,13 +194,16 @@
             overflow: hidden;
             cursor: pointer;
             background: #e8e0d5;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .comparison-img {
             position: absolute;
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
             transition: all 0.3s ease;
         }
 
@@ -336,7 +343,8 @@
         .detail-images img {
             width: 100%;
             height: 220px;
-            object-fit: cover;
+            object-fit: contain;
+            background: #e8e0d5;
         }
 
         .detail-content {
@@ -844,7 +852,8 @@
         .image-preview-item img {
             width: 100px;
             height: 100px;
-            object-fit: cover;
+            object-fit: contain;
+            background: #e8e0d5;
             border-radius: 10px;
             border: 2px solid #c4b28a;
         }
@@ -1396,7 +1405,7 @@
                     selectedOldImage = compressed;
                     const preview = document.getElementById('oldImagePreview');
                     if (preview) {
-                        preview.innerHTML = `<img src="${selectedOldImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
+                        preview.innerHTML = `<img src="${selectedOldImage}" style="width:100px; height:100px; object-fit:contain; background:#e8e0d5; border-radius:10px; border:2px solid #c4b28a;">`;
                     }
                 }
             };
@@ -1418,7 +1427,7 @@
                     selectedNewImage = compressed;
                     const preview = document.getElementById('newImagePreview');
                     if (preview) {
-                        preview.innerHTML = `<img src="${selectedNewImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
+                        preview.innerHTML = `<img src="${selectedNewImage}" style="width:100px; height:100px; object-fit:contain; background:#e8e0d5; border-radius:10px; border:2px solid #c4b28a;">`;
                     }
                 }
             };
@@ -1441,7 +1450,7 @@
                     editSelectedOldImage = compressed;
                     const preview = document.getElementById('editOldImagePreview');
                     if (preview) {
-                        preview.innerHTML = `<img src="${editSelectedOldImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
+                        preview.innerHTML = `<img src="${editSelectedOldImage}" style="width:100px; height:100px; object-fit:contain; background:#e8e0d5; border-radius:10px; border:2px solid #c4b28a;">`;
                     }
                 }
             };
@@ -1463,7 +1472,7 @@
                     editSelectedNewImage = compressed;
                     const preview = document.getElementById('editNewImagePreview');
                     if (preview) {
-                        preview.innerHTML = `<img src="${editSelectedNewImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
+                        preview.innerHTML = `<img src="${editSelectedNewImage}" style="width:100px; height:100px; object-fit:contain; background:#e8e0d5; border-radius:10px; border:2px solid #c4b28a;">`;
                     }
                 }
             };
@@ -1540,7 +1549,7 @@
                     
                     <div class="image-preview-area">
                         <div><strong>Текущее фото "ТОГДА":</strong></div>
-                        ${place.old_image ? `<img src="${place.old_image}" style="max-width:150px; max-height:100px; margin:5px 0; border-radius:8px;">` : '<div>Нет фото</div>'}
+                        ${place.old_image ? `<img src="${place.old_image}" style="max-width:150px; max-height:100px; margin:5px 0; border-radius:8px; object-fit:contain; background:#e8e0d5;">` : '<div>Нет фото</div>'}
                         <div class="file-input-label" onclick="uploadEditOldImage()">📷 Заменить фото ТОГДА</div>
                         <div class="compress-control">
                             <label>📊 Качество сжатия: <span id="editOldQualityValue">80</span>%</label>
@@ -1551,7 +1560,7 @@
                     
                     <div class="image-preview-area">
                         <div><strong>Текущее фото "СЕЙЧАС":</strong></div>
-                        ${place.new_image ? `<img src="${place.new_image}" style="max-width:150px; max-height:100px; margin:5px 0; border-radius:8px;">` : '<div>Нет фото</div>'}
+                        ${place.new_image ? `<img src="${place.new_image}" style="max-width:150px; max-height:100px; margin:5px 0; border-radius:8px; object-fit:contain; background:#e8e0d5;">` : '<div>Нет фото</div>'}
                         <div class="file-input-label" onclick="uploadEditNewImage()">📸 Заменить фото СЕЙЧАС</div>
                         <div class="compress-control">
                             <label>📊 Качество сжатия: <span id="editNewQualityValue">80</span>%</label>
@@ -1776,7 +1785,7 @@
                     <div style="height:300px; border-radius:16px; overflow:hidden; margin:12px 0;"><div id="modalMiniMap" style="height:100%; width:100%;"></div></div>
                     <p><strong>Адрес:</strong> ${place.address}</p>
                     <p><strong>Год:</strong> ${place.year}</p>
-                    <img src="${place.new_image}" style="max-height:160px; width:auto; margin:10px auto;">
+                    <img src="${place.new_image}" style="max-height:160px; width:auto; object-fit:contain; background:#e8e0d5; margin:10px auto;">
                 `;
                 document.getElementById('mapModal').style.display = 'flex';
                 setTimeout(() => {
@@ -2236,3 +2245,4 @@
     </script>
 </body>
 </html>
+```
