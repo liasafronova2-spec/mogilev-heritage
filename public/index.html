@@ -822,6 +822,68 @@
             cursor: pointer;
         }
 
+        .image-preview-area {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+
+        .image-preview {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .image-preview-item {
+            text-align: center;
+            position: relative;
+        }
+
+        .image-preview-item img {
+            width: 100px;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 2px solid #c4b28a;
+        }
+
+        .compress-control {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+        }
+
+        .compress-control label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 0.85em;
+        }
+
+        .compress-control input {
+            width: 100%;
+            margin: 5px 0;
+        }
+
+        .compress-control span {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .file-input-label {
+            background: #6b5e3a;
+            color: white;
+            padding: 10px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            margin: 5px 0;
+            display: inline-block;
+        }
+
         .place-item {
             background: rgba(255,255,255,0.1);
             padding: 10px;
@@ -1089,6 +1151,14 @@
         let currentPage = 'main';
         let currentPlaceId = null;
         let userAvatar = localStorage.getItem('userAvatar') || null;
+        
+        // Переменные для загрузки фото
+        let selectedOldImage = null;
+        let selectedNewImage = null;
+        let oldImageQuality = 80;
+        let newImageQuality = 80;
+        let oldImagePreviewData = null;
+        let newImagePreviewData = null;
 
         function filterPlaces(data) {
             return data.filter(p => p.category !== 'building');
@@ -1198,6 +1268,45 @@
             return false;
         }
 
+        // Функция сжатия изображения
+        async function compressImage(file, quality) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.src = event.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const ctx = canvas.getContext('2d');
+                        
+                        let width = img.width;
+                        let height = img.height;
+                        const maxSize = 1200;
+                        
+                        if (width > maxSize || height > maxSize) {
+                            if (width > height) {
+                                height = Math.round((height * maxSize) / width);
+                                width = maxSize;
+                            } else {
+                                width = Math.round((width * maxSize) / height);
+                                height = maxSize;
+                            }
+                        }
+                        
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality / 100);
+                        resolve(compressedDataUrl);
+                    };
+                    img.onerror = reject;
+                };
+                reader.onerror = reject;
+            });
+        }
+
         function updateUserUI() {
             if (currentUser) {
                 document.getElementById('userName').textContent = currentUser.name;
@@ -1227,30 +1336,99 @@
         }
 
         function uploadAvatar() {
+            if (!currentUser) {
+                alert('Войдите в аккаунт');
+                return;
+            }
             const input = document.createElement('input');
             input.type = 'file';
             input.accept = 'image/*';
-            input.onchange = (e) => {
+            input.onchange = async (e) => {
                 const file = e.target.files[0];
                 if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        userAvatar = event.target.result;
-                        localStorage.setItem('userAvatar', userAvatar);
-                        updateUserUI();
-                        if (document.getElementById('profileAvatarImg')) {
-                            const avatarImg = document.getElementById('profileAvatarImg');
-                            if (avatarImg) {
-                                avatarImg.style.backgroundImage = `url(${userAvatar})`;
-                                avatarImg.style.backgroundSize = 'cover';
-                                avatarImg.textContent = '';
-                            }
+                    const quality = parseInt(prompt('Качество сжатия (50-100%, рекомендуем 70-80%)', '80'));
+                    const q = Math.min(100, Math.max(50, quality || 80));
+                    const compressed = await compressImage(file, q);
+                    userAvatar = compressed;
+                    localStorage.setItem('userAvatar', userAvatar);
+                    updateUserUI();
+                    if (document.getElementById('profileAvatarImg')) {
+                        const avatarImg = document.getElementById('profileAvatarImg');
+                        if (avatarImg) {
+                            avatarImg.style.backgroundImage = `url(${userAvatar})`;
+                            avatarImg.style.backgroundSize = 'cover';
+                            avatarImg.textContent = '';
                         }
-                    };
-                    reader.readAsDataURL(file);
+                    }
                 }
             };
             input.click();
+        }
+
+        // Функции для загрузки фото места (только для админа)
+        async function uploadOldImage() {
+            if (!currentUser || currentUser.is_admin !== 1) {
+                alert('Только администратор может загружать фото');
+                return;
+            }
+            const quality = oldImageQuality;
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const compressed = await compressImage(file, quality);
+                    selectedOldImage = compressed;
+                    const preview = document.getElementById('oldImagePreview');
+                    if (preview) {
+                        preview.innerHTML = `<img src="${selectedOldImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
+                    }
+                }
+            };
+            input.click();
+        }
+
+        async function uploadNewImage() {
+            if (!currentUser || currentUser.is_admin !== 1) {
+                alert('Только администратор может загружать фото');
+                return;
+            }
+            const quality = newImageQuality;
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const compressed = await compressImage(file, quality);
+                    selectedNewImage = compressed;
+                    const preview = document.getElementById('newImagePreview');
+                    if (preview) {
+                        preview.innerHTML = `<img src="${selectedNewImage}" style="width:100px; height:100px; object-fit:cover; border-radius:10px; border:2px solid #c4b28a;">`;
+                    }
+                }
+            };
+            input.click();
+        }
+
+        function updateOldQuality(value) {
+            oldImageQuality = parseInt(value);
+            document.getElementById('oldQualityValue').textContent = oldImageQuality + '%';
+        }
+
+        function updateNewQuality(value) {
+            newImageQuality = parseInt(value);
+            document.getElementById('newQualityValue').textContent = newImageQuality + '%';
+        }
+
+        function clearImagePreviews() {
+            selectedOldImage = null;
+            selectedNewImage = null;
+            const oldPreview = document.getElementById('oldImagePreview');
+            const newPreview = document.getElementById('newImagePreview');
+            if (oldPreview) oldPreview.innerHTML = '';
+            if (newPreview) newPreview.innerHTML = '';
         }
 
         function showProfilePage() {
@@ -1616,9 +1794,12 @@
             }
         }
 
-        // Админ-панель
+        // Админ-панель с загрузкой фото через галерею (только для админа)
         async function showAdminPanel() {
-            if (!currentUser || currentUser.is_admin !== 1) { alert('Доступ запрещен'); return; }
+            if (!currentUser || currentUser.is_admin !== 1) { 
+                alert('Доступ запрещен. Только для администратора'); 
+                return; 
+            }
             
             await loadLogs();
             
@@ -1627,16 +1808,38 @@
                     <h4>➕ Добавить место</h4>
                     <div class="admin-form">
                         <input type="text" id="newName" placeholder="Название">
-                        <select id="newCategory"><option value="monument">🏛️ Памятник</option><option value="street">🛣️ Улица</option></select>
+                        <select id="newCategory">
+                            <option value="monument">🏛️ Памятник</option>
+                            <option value="street">🛣️ Улица</option>
+                        </select>
                         <input type="text" id="newAddress" placeholder="Адрес">
                         <input type="text" id="newLat" placeholder="Широта (lat)">
                         <input type="text" id="newLng" placeholder="Долгота (lng)">
                         <input type="text" id="newYear" placeholder="Год">
                         <textarea id="newDesc" placeholder="Краткое описание" rows="2"></textarea>
                         <textarea id="newHistory" placeholder="Полная история" rows="3"></textarea>
-                        <input type="text" id="newOldImg" placeholder="URL старого фото">
-                        <input type="text" id="newNewImg" placeholder="URL нового фото">
-                        <button class="admin-btn" onclick="adminAddPlace()">➕ Добавить</button>
+                        
+                        <div class="image-preview-area">
+                            <div class="file-input-label" onclick="uploadOldImage()">📷 Загрузить фото ТОГДА</div>
+                            <div class="compress-control">
+                                <label>📊 Качество сжатия для фото "ТОГДА": <span id="oldQualityValue">80</span>%</label>
+                                <input type="range" min="50" max="100" value="80" oninput="updateOldQuality(this.value)">
+                                <span>⬅️ Меньше размер | Качество лучше ➡️</span>
+                            </div>
+                            <div id="oldImagePreview" class="image-preview"></div>
+                        </div>
+                        
+                        <div class="image-preview-area">
+                            <div class="file-input-label" onclick="uploadNewImage()">📸 Загрузить фото СЕЙЧАС</div>
+                            <div class="compress-control">
+                                <label>📊 Качество сжатия для фото "СЕЙЧАС": <span id="newQualityValue">80</span>%</label>
+                                <input type="range" min="50" max="100" value="80" oninput="updateNewQuality(this.value)">
+                                <span>⬅️ Меньше размер | Качество лучше ➡️</span>
+                            </div>
+                            <div id="newImagePreview" class="image-preview"></div>
+                        </div>
+                        
+                        <button class="admin-btn" onclick="adminAddPlace()">➕ Добавить место</button>
                     </div>
                     <h4 style="margin-top:15px;">📋 Существующие места</h4>
                     <div id="placesList"></div>
@@ -1678,7 +1881,6 @@
             const actionIcons = {
                 'ADD_PLACE': '➕',
                 'DELETE_PLACE': '🗑️',
-                'EDIT_PLACE': '✏️',
                 'ADD_REVIEW': '💬',
                 'DELETE_REVIEW': '🗑️',
                 'EDIT_REVIEW': '✏️',
@@ -1695,6 +1897,11 @@
         }
 
         async function adminAddPlace() {
+            if (!currentUser || currentUser.is_admin !== 1) {
+                alert('Доступ запрещен');
+                return;
+            }
+            
             const name = document.getElementById('newName').value;
             const category = document.getElementById('newCategory').value;
             const address = document.getElementById('newAddress').value;
@@ -1703,20 +1910,49 @@
             const year = document.getElementById('newYear').value;
             const description = document.getElementById('newDesc').value;
             const full_history = document.getElementById('newHistory').value;
-            const old_image = document.getElementById('newOldImg').value;
-            const new_image = document.getElementById('newNewImg').value;
-            if (!name || !address || isNaN(lat) || isNaN(lng)) { alert('Заполните название, адрес и координаты!'); return; }
-            const data = await apiRequest('/api/admin/places', { method: 'POST', body: JSON.stringify({ name, category, address, lat, lng, year, description, full_history, old_image, new_image }) });
+            const old_image = selectedOldImage || '';
+            const new_image = selectedNewImage || '';
+            
+            if (!name || !address || isNaN(lat) || isNaN(lng)) { 
+                alert('Заполните название, адрес и координаты!'); 
+                return; 
+            }
+            
+            const data = await apiRequest('/api/admin/places', { 
+                method: 'POST', 
+                body: JSON.stringify({ name, category, address, lat, lng, year, description, full_history, old_image, new_image }) 
+            });
+            
             if (data && data.id) { 
                 await loadPlaces(); 
                 renderPlacesList(); 
                 await loadLogs();
                 renderLogsList();
+                clearImagePreviews();
                 alert('Место добавлено!'); 
+                // Очищаем поля формы
+                document.getElementById('newName').value = '';
+                document.getElementById('newAddress').value = '';
+                document.getElementById('newLat').value = '';
+                document.getElementById('newLng').value = '';
+                document.getElementById('newYear').value = '';
+                document.getElementById('newDesc').value = '';
+                document.getElementById('newHistory').value = '';
+                // Сбрасываем качество
+                oldImageQuality = 80;
+                newImageQuality = 80;
+                const oldSlider = document.querySelector('#oldQualityValue');
+                const newSlider = document.querySelector('#newQualityValue');
+                if (oldSlider) oldSlider.textContent = '80';
+                if (newSlider) newSlider.textContent = '80';
             } else if (data && data.error) alert(data.error);
         }
 
         async function adminDeletePlace(id) {
+            if (!currentUser || currentUser.is_admin !== 1) {
+                alert('Доступ запрещен');
+                return;
+            }
             if (confirm('Удалить место?')) {
                 const data = await apiRequest(`/api/admin/places/${id}`, { method: 'DELETE' });
                 if (data && data.message) { 
@@ -1740,7 +1976,10 @@
             `).join('');
         }
 
-        function closeAdminPanel() { document.getElementById('adminModal').style.display = 'none'; }
+        function closeAdminPanel() { 
+            document.getElementById('adminModal').style.display = 'none';
+            clearImagePreviews();
+        }
 
         window.showDetailPage = showDetailPage;
         window.showOnMap = showOnMap;
@@ -1761,6 +2000,10 @@
         window.submitResetPassword = submitResetPassword;
         window.showProfilePage = showProfilePage;
         window.uploadAvatar = uploadAvatar;
+        window.uploadOldImage = uploadOldImage;
+        window.uploadNewImage = uploadNewImage;
+        window.updateOldQuality = updateOldQuality;
+        window.updateNewQuality = updateNewQuality;
         window.logout = logout;
 
         document.querySelectorAll('.nav-link').forEach(link => {
