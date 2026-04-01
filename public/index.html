@@ -1189,16 +1189,21 @@
         async function apiRequest(url, options = {}) {
             const headers = { 'Content-Type': 'application/json', ...options.headers };
             if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-            const response = await fetch(`${API_URL}${url}`, { ...options, headers });
-            const data = await response.json();
-            if (response.status === 401) {
-                localStorage.removeItem('token');
-                authToken = null;
-                currentUser = null;
-                updateUserUI();
-                return null;
+            try {
+                const response = await fetch(`${API_URL}${url}`, { ...options, headers });
+                const data = await response.json();
+                if (response.status === 401) {
+                    localStorage.removeItem('token');
+                    authToken = null;
+                    currentUser = null;
+                    updateUserUI();
+                    return null;
+                }
+                return data;
+            } catch (err) {
+                console.error('API Error:', err);
+                return { error: 'Ошибка соединения' };
             }
-            return data;
         }
 
         async function register(email, password, name) {
