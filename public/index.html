@@ -1393,7 +1393,7 @@
         }
 
         // Функции для загрузки фото места (только для админа)
-        async function uploadOldImage() {
+        window.uploadOldImage = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
                 alert('Только администратор может загружать фото');
                 return;
@@ -1413,9 +1413,9 @@
                 }
             };
             input.click();
-        }
+        };
 
-        async function uploadNewImage() {
+        window.uploadNewImage = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
                 alert('Только администратор может загружать фото');
                 return;
@@ -1435,10 +1435,10 @@
                 }
             };
             input.click();
-        }
+        };
 
         // Функции для редактирования фото
-        async function uploadEditOldImage() {
+        window.uploadEditOldImage = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
                 alert('Только администратор может загружать фото');
                 return;
@@ -1458,9 +1458,9 @@
                 }
             };
             input.click();
-        }
+        };
 
-        async function uploadEditNewImage() {
+        window.uploadEditNewImage = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
                 alert('Только администратор может загружать фото');
                 return;
@@ -1480,27 +1480,27 @@
                 }
             };
             input.click();
-        }
+        };
 
-        function updateOldQuality(value) {
+        window.updateOldQuality = function(value) {
             oldImageQuality = parseInt(value);
             document.getElementById('oldQualityValue').textContent = oldImageQuality + '%';
-        }
+        };
 
-        function updateNewQuality(value) {
+        window.updateNewQuality = function(value) {
             newImageQuality = parseInt(value);
             document.getElementById('newQualityValue').textContent = newImageQuality + '%';
-        }
+        };
 
-        function updateEditOldQuality(value) {
+        window.updateEditOldQuality = function(value) {
             editOldImageQuality = parseInt(value);
             document.getElementById('editOldQualityValue').textContent = editOldImageQuality + '%';
-        }
+        };
 
-        function updateEditNewQuality(value) {
+        window.updateEditNewQuality = function(value) {
             editNewImageQuality = parseInt(value);
             document.getElementById('editNewQualityValue').textContent = editNewImageQuality + '%';
-        }
+        };
 
         function clearImagePreviews() {
             selectedOldImage = null;
@@ -1521,7 +1521,7 @@
         }
 
         // Редактирование места
-        async function showEditPlaceModal(placeId) {
+        window.showEditPlaceModal = async function(placeId) {
             if (!currentUser || currentUser.is_admin !== 1) {
                 alert('Доступ запрещен');
                 return;
@@ -1578,22 +1578,22 @@
             
             document.getElementById('editPlaceForm').innerHTML = editFormHtml;
             document.getElementById('editPlaceModal').style.display = 'flex';
-        }
+        };
 
-        async function saveEditedPlace() {
+        window.saveEditedPlace = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
                 alert('Доступ запрещен');
                 return;
             }
             
-            const name = document.getElementById('editName').value;
-            const category = document.getElementById('editCategory').value;
-            const address = document.getElementById('editAddress').value;
-            const lat = parseFloat(document.getElementById('editLat').value);
-            const lng = parseFloat(document.getElementById('editLng').value);
-            const year = document.getElementById('editYear').value;
-            const description = document.getElementById('editDesc').value;
-            const full_history = document.getElementById('editHistory').value;
+            const name = document.getElementById('editName')?.value;
+            const category = document.getElementById('editCategory')?.value;
+            const address = document.getElementById('editAddress')?.value;
+            const lat = parseFloat(document.getElementById('editLat')?.value);
+            const lng = parseFloat(document.getElementById('editLng')?.value);
+            const year = document.getElementById('editYear')?.value;
+            const description = document.getElementById('editDesc')?.value;
+            const full_history = document.getElementById('editHistory')?.value;
             
             if (!name || !address || isNaN(lat) || isNaN(lng)) {
                 alert('Заполните название, адрес и координаты!');
@@ -1616,7 +1616,7 @@
             } else if (data && data.error) {
                 alert(data.error);
             }
-        }
+        };
 
         function closeEditModal() {
             document.getElementById('editPlaceModal').style.display = 'none';
@@ -1987,7 +1987,7 @@
         }
 
         // Админ-панель с редактированием мест
-        async function showAdminPanel() {
+        window.showAdminPanel = async function() {
             if (!currentUser || currentUser.is_admin !== 1) { 
                 alert('Доступ запрещен. Только для администратора'); 
                 return; 
@@ -2059,7 +2059,7 @@
                     }
                 });
             });
-        }
+        };
         
         function renderLogsList() {
             const container = document.getElementById('logsList');
@@ -2087,20 +2087,20 @@
             `).join('');
         }
 
-        async function adminAddPlace() {
+        window.adminAddPlace = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
                 alert('Доступ запрещен');
                 return;
             }
             
-            const name = document.getElementById('newName').value;
-            const category = document.getElementById('newCategory').value;
-            const address = document.getElementById('newAddress').value;
-            const lat = parseFloat(document.getElementById('newLat').value);
-            const lng = parseFloat(document.getElementById('newLng').value);
-            const year = document.getElementById('newYear').value;
-            const description = document.getElementById('newDesc').value;
-            const full_history = document.getElementById('newHistory').value;
+            const name = document.getElementById('newName')?.value;
+            const category = document.getElementById('newCategory')?.value;
+            const address = document.getElementById('newAddress')?.value;
+            const lat = parseFloat(document.getElementById('newLat')?.value);
+            const lng = parseFloat(document.getElementById('newLng')?.value);
+            const year = document.getElementById('newYear')?.value;
+            const description = document.getElementById('newDesc')?.value;
+            const full_history = document.getElementById('newHistory')?.value;
             const old_image = selectedOldImage || '';
             const new_image = selectedNewImage || '';
             
@@ -2137,9 +2137,9 @@
                 if (oldSlider) oldSlider.textContent = '80';
                 if (newSlider) newSlider.textContent = '80';
             } else if (data && data.error) alert(data.error);
-        }
+        };
 
-        async function adminDeletePlace(id) {
+        window.adminDeletePlace = async function(id) {
             if (!currentUser || currentUser.is_admin !== 1) {
                 alert('Доступ запрещен');
                 return;
@@ -2154,7 +2154,7 @@
                     alert('Место удалено'); 
                 }
             }
-        }
+        };
 
         function renderPlacesList() {
             const container = document.getElementById('placesList');
@@ -2184,8 +2184,6 @@
         window.editCommentPrompt = editCommentPrompt;
         window.deleteCommentPrompt = deleteCommentPrompt;
         window.submitDetailComment = submitDetailComment;
-        window.adminAddPlace = adminAddPlace;
-        window.adminDeletePlace = adminDeletePlace;
         window.closeAdminPanel = closeAdminPanel;
         window.showLoginPage = showLoginPage;
         window.showRegisterPage = showRegisterPage;
@@ -2194,17 +2192,6 @@
         window.submitResetPassword = submitResetPassword;
         window.showProfilePage = showProfilePage;
         window.uploadAvatar = uploadAvatar;
-        window.uploadOldImage = uploadOldImage;
-        window.uploadNewImage = uploadNewImage;
-        window.uploadEditOldImage = uploadEditOldImage;
-        window.uploadEditNewImage = uploadEditNewImage;
-        window.updateOldQuality = updateOldQuality;
-        window.updateNewQuality = updateNewQuality;
-        window.updateEditOldQuality = updateEditOldQuality;
-        window.updateEditNewQuality = updateEditNewQuality;
-        window.showEditPlaceModal = showEditPlaceModal;
-        window.saveEditedPlace = saveEditedPlace;
-        window.closeEditModal = closeEditModal;
         window.logout = logout;
 
         document.querySelectorAll('.nav-link').forEach(link => {
