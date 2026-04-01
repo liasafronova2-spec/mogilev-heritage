@@ -14,6 +14,7 @@ app.use(express.static('public'));
 
 const db = new sqlite3.Database('./database.sqlite');
 
+// Функция логирования
 function logActivity(userId, action, details) {
     db.run("INSERT INTO activity_logs (user_id, action, details) VALUES (?, ?, ?)",
         [userId, action, details], (err) => {
@@ -21,6 +22,7 @@ function logActivity(userId, action, details) {
         });
 }
 
+// Создание таблиц
 db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -71,6 +73,7 @@ db.serialize(() => {
     )`);
 });
 
+// Создание администратора
 bcrypt.hash('admin2026', 10, (err, hash) => {
     if (!err) {
         db.run("INSERT OR IGNORE INTO users (email, password, name, is_admin) VALUES (?, ?, ?, 1)",
@@ -79,7 +82,7 @@ bcrypt.hash('admin2026', 10, (err, hash) => {
     }
 });
 
-// Добавление тестовых мест
+// Добавление тестовых мест (только памятники и улицы, без зданий)
 db.get("SELECT COUNT(*) as count FROM places", (err, row) => {
     if (!err && row && row.count === 0) {
         const places = [
@@ -125,6 +128,7 @@ db.get("SELECT COUNT(*) as count FROM places", (err, row) => {
              'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EПервомайская улица%3C/text%3E%3C/svg%3E',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mogilev_Three_Saints_Cathedral.jpg/800px-Mogilev_Three_Saints_Cathedral.jpg']
         ];
+        
         const stmt = db.prepare("INSERT INTO places (name, category, address, lat, lng, year, description, full_history, old_image, new_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         places.forEach(p => stmt.run(p));
         stmt.finalize();
@@ -134,6 +138,7 @@ db.get("SELECT COUNT(*) as count FROM places", (err, row) => {
 
 // ============ API ============
 
+// Регистрация
 app.post('/api/register', async (req, res) => {
     const { email, password, name } = req.body;
     if (!email || !password || !name) return res.status(400).json({ error: 'Заполните все поля' });
@@ -151,6 +156,7 @@ app.post('/api/register', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Ошибка сервера' }); }
 });
 
+// Вход
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Заполните все поля' });
@@ -164,6 +170,7 @@ app.post('/api/login', (req, res) => {
     });
 });
 
+// Получить текущего пользователя
 app.get('/api/me', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
@@ -174,6 +181,7 @@ app.get('/api/me', (req, res) => {
     });
 });
 
+// Получить все места
 app.get('/api/places', (req, res) => {
     db.all("SELECT * FROM places ORDER BY id", [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -182,6 +190,7 @@ app.get('/api/places', (req, res) => {
     });
 });
 
+// Получить отзывы
 app.get('/api/reviews', (req, res) => {
     db.all(`
         SELECT r.*, u.name as user_name, u.email as user_email
@@ -194,6 +203,7 @@ app.get('/api/reviews', (req, res) => {
     });
 });
 
+// Добавить отзыв
 app.post('/api/reviews', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -211,6 +221,7 @@ app.post('/api/reviews', (req, res) => {
     });
 });
 
+// Редактировать отзыв
 app.put('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -232,6 +243,7 @@ app.put('/api/reviews/:id', (req, res) => {
     });
 });
 
+// Удалить отзыв
 app.delete('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -251,6 +263,7 @@ app.delete('/api/reviews/:id', (req, res) => {
     });
 });
 
+// Админ: добавить место
 app.post('/api/admin/places', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -271,6 +284,7 @@ app.post('/api/admin/places', (req, res) => {
     });
 });
 
+// Админ: обновить место (редактирование)
 app.put('/api/admin/places/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -304,6 +318,7 @@ app.put('/api/admin/places/:id', (req, res) => {
     });
 });
 
+// Админ: удалить место
 app.delete('/api/admin/places/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -321,6 +336,7 @@ app.delete('/api/admin/places/:id', (req, res) => {
     });
 });
 
+// Админ: получить логи действий
 app.get('/api/admin/logs', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -341,6 +357,7 @@ app.get('/api/admin/logs', (req, res) => {
     });
 });
 
+// Админ: получить статистику
 app.get('/api/admin/stats', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -365,10 +382,12 @@ app.get('/api/admin/stats', (req, res) => {
     });
 });
 
+// Выход
 app.post('/api/logout', (req, res) => {
     res.json({ message: 'Выход выполнен' });
 });
 
+// Запуск сервера
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Сервер запущен!`);
     console.log(`📱 Локально: http://localhost:${PORT}`);
