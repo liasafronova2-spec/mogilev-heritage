@@ -190,7 +190,6 @@
             width: 100%;
             height: 220px;
             overflow: hidden;
-            cursor: pointer;
             background: #e8e0d5;
         }
 
@@ -201,6 +200,7 @@
             object-fit: cover;
             object-position: center 30%;
             transition: all 0.3s ease;
+            cursor: pointer;
         }
 
         .old-img {
@@ -269,6 +269,8 @@
             cursor: pointer;
             text-align: center;
             transition: 0.2s;
+            position: relative;
+            z-index: 5;
         }
 
         .card-btn:active {
@@ -342,6 +344,7 @@
             object-fit: cover;
             object-position: center 30%;
             background: #e8e0d5;
+            cursor: pointer;
         }
 
         .detail-content {
@@ -1015,6 +1018,49 @@
             border: none;
         }
 
+        .fullscreen-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .fullscreen-modal.active {
+            display: flex;
+        }
+
+        .fullscreen-modal-content {
+            position: relative;
+            max-width: 95%;
+            max-height: 95%;
+        }
+
+        .fullscreen-modal-content img {
+            width: 100%;
+            height: auto;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 12px;
+        }
+
+        .fullscreen-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            font-size: 32px;
+            cursor: pointer;
+            color: white;
+            background: none;
+            border: none;
+        }
+
         @media (max-width: 768px) {
             .user-bar {
                 position: static;
@@ -1157,6 +1203,13 @@
             <button class="modal-close" onclick="closeMapModal()">&times;</button>
             <h3 id="mapModalTitle">📍 Место на карте</h3>
             <div id="mapModalInfo"></div>
+        </div>
+    </div>
+
+    <div id="fullscreenModal" class="fullscreen-modal">
+        <div class="fullscreen-modal-content">
+            <button class="fullscreen-close" onclick="closeFullscreen()">&times;</button>
+            <img id="fullscreenImage" src="" alt="Полноэкранный режим">
         </div>
     </div>
 
@@ -1393,6 +1446,18 @@
                 }
             };
             input.click();
+        }
+
+        // Полноэкранный режим для фото
+        function openFullscreen(imageUrl) {
+            const modal = document.getElementById('fullscreenModal');
+            const img = document.getElementById('fullscreenImage');
+            img.src = imageUrl;
+            modal.classList.add('active');
+        }
+
+        function closeFullscreen() {
+            document.getElementById('fullscreenModal').classList.remove('active');
         }
 
         // Функции для загрузки фото места (только для админа)
@@ -1813,28 +1878,35 @@
             const grid = document.getElementById('placesGrid');
             if (!grid) return;
             if (!placesData.length) { grid.innerHTML = '<div style="text-align:center; padding:40px;">Загрузка...</div>'; return; }
-            grid.innerHTML = placesData.map(place => `
-                <div class="place-card">
-                    <div class="place-card-header">
-                        <h3>${escapeHtml(place.name)}</h3>
-                        <p>📍 ${escapeHtml(place.address)}</p>
-                    </div>
-                    <div class="comparison-container" onclick="showDetailPage(${place.id})">
-                        <img class="comparison-img old-img" src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
-                        <img class="comparison-img new-img" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
-                        <span class="img-label label-old">📷 ТОГДА</span>
-                        <span class="img-label label-new">📸 СЕЙЧАС</span>
-                    </div>
-                    <div class="place-card-info">
-                        <p>${escapeHtml(place.description.substring(0, 100))}${place.description && place.description.length > 100 ? '...' : ''}</p>
-                        <div class="card-buttons">
-                            <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
-                            <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
+            grid.innerHTML = placesData.map(place => {
+                const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
+                const avg = placeReviews.length ? (placeReviews.reduce((s, r) => s + r.rating, 0) / placeReviews.length).toFixed(1) : null;
+                return `
+                    <div class="place-card">
+                        <div class="place-card-header">
+                            <h3>${escapeHtml(place.name)}</h3>
+                            <p>📍 ${escapeHtml(place.address)}</p>
+                        </div>
+                        <div class="comparison-container">
+                            <img class="comparison-img old-img" src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" onclick="event.stopPropagation(); openFullscreen('${place.old_image}')">
+                            <img class="comparison-img new-img" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" onclick="event.stopPropagation(); openFullscreen('${place.new_image}')">
+                            <span class="img-label label-old">📷 ТОГДА</span>
+                            <span class="img-label label-new">📸 СЕЙЧАС</span>
+                        </div>
+                        <div class="place-card-info">
+                            <p>${escapeHtml(place.description.substring(0, 100))}${place.description && place.description.length > 100 ? '...' : ''}</p>
+                            <div class="rating-stars">${avg ? renderStars(Math.round(avg)) + ' (' + placeReviews.length + ')' : '☆☆☆☆☆ (0)'}</div>
+                            <div class="card-buttons">
+                                <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
+                                <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
         }
+
+        function renderStars(rating) { let s = ''; for (let i = 1; i <= 5; i++) s += i <= rating ? '★' : '☆'; return s; }
 
         window.showDetailPage = function(placeId) {
             const place = placesData.find(p => p.id === placeId);
@@ -1862,8 +1934,8 @@
                         <div>📅 ${escapeHtml(place.year)}</div>
                     </div>
                     <div class="detail-images">
-                        <img src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
-                        <img src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                        <img src="${place.old_image}" onclick="openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                        <img src="${place.new_image}" onclick="openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
                     </div>
                     <div class="detail-content">
                         <h3>📖 Описание</h3>
@@ -1941,26 +2013,32 @@
             if (!grid) return;
             const names = { monument: '🏛️ Памятники', street: '🛣️ Улицы' };
             grid.innerHTML = `<div style="font-size:1.3em; color:#6b5e3a; margin-bottom:20px;">${names[category]}</div>` +
-                filtered.map(place => `
-                    <div class="place-card">
-                        <div class="place-card-header">
-                            <h3>${escapeHtml(place.name)}</h3>
-                            <p>📍 ${escapeHtml(place.address)}</p>
-                        </div>
-                        <div class="comparison-container" onclick="showDetailPage(${place.id})">
-                            <img class="comparison-img old-img" src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
-                            <img class="comparison-img new-img" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
-                            <span class="img-label label-old">📷 ТОГДА</span><span class="img-label label-new">📸 СЕЙЧАС</span>
-                        </div>
-                        <div class="place-card-info">
-                            <p>${escapeHtml(place.description.substring(0, 100))}...</p>
-                            <div class="card-buttons">
-                                <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
-                                <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
+                filtered.map(place => {
+                    const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
+                    const avg = placeReviews.length ? (placeReviews.reduce((s, r) => s + r.rating, 0) / placeReviews.length).toFixed(1) : null;
+                    return `
+                        <div class="place-card">
+                            <div class="place-card-header">
+                                <h3>${escapeHtml(place.name)}</h3>
+                                <p>📍 ${escapeHtml(place.address)}</p>
+                            </div>
+                            <div class="comparison-container">
+                                <img class="comparison-img old-img" src="${place.old_image}" onclick="event.stopPropagation(); openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                                <img class="comparison-img new-img" src="${place.new_image}" onclick="event.stopPropagation(); openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'">
+                                <span class="img-label label-old">📷 ТОГДА</span>
+                                <span class="img-label label-new">📸 СЕЙЧАС</span>
+                            </div>
+                            <div class="place-card-info">
+                                <p>${escapeHtml(place.description.substring(0, 100))}...</p>
+                                <div class="rating-stars">${avg ? renderStars(Math.round(avg)) + ' (' + placeReviews.length + ')' : '☆☆☆☆☆ (0)'}</div>
+                                <div class="card-buttons">
+                                    <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
+                                    <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                `).join('');
+                    `;
+                }).join('');
         }
 
         function renderMainPageView() {
@@ -1989,7 +2067,7 @@
             }
         }
 
-        // Админ-панель с редактированием мест
+        // Админ-панель
         window.showAdminPanel = async function() {
             if (!currentUser || currentUser.is_admin !== 1) { 
                 alert('Доступ запрещен. Только для администратора'); 
@@ -2124,7 +2202,6 @@
                 renderLogsList();
                 clearImagePreviews();
                 alert('Место добавлено!'); 
-                // Очищаем поля формы
                 document.getElementById('newName').value = '';
                 document.getElementById('newAddress').value = '';
                 document.getElementById('newLat').value = '';
@@ -2132,7 +2209,6 @@
                 document.getElementById('newYear').value = '';
                 document.getElementById('newDesc').value = '';
                 document.getElementById('newHistory').value = '';
-                // Сбрасываем качество
                 oldImageQuality = 80;
                 newImageQuality = 80;
                 const oldSlider = document.getElementById('oldQualityValue');
@@ -2195,6 +2271,8 @@
         window.submitResetPassword = submitResetPassword;
         window.showProfilePage = showProfilePage;
         window.uploadAvatar = uploadAvatar;
+        window.openFullscreen = openFullscreen;
+        window.closeFullscreen = closeFullscreen;
         window.logout = logout;
 
         document.querySelectorAll('.nav-link').forEach(link => {
