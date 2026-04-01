@@ -75,6 +75,7 @@ bcrypt.hash('admin2026', 10, (err, hash) => {
     if (!err) {
         db.run("INSERT OR IGNORE INTO users (email, password, name, is_admin) VALUES (?, ?, ?, 1)",
             ['admin@mogilev.by', hash, 'Администратор']);
+        console.log('✅ Админ создан: admin@mogilev.by / admin2026');
     }
 });
 
@@ -84,43 +85,50 @@ db.get("SELECT COUNT(*) as count FROM places", (err, row) => {
         const places = [
             ['Ратуша Могилева', 'monument', 'ул. Ленинская, 1А', 53.8945, 30.3310, '1679-1681',
              'Символ магдебургского права, жемчужина архитектуры XVII века.',
-             'Могилевская ратуша построена в 1679-1681 годах...',
+             'Могилевская ратуша построена в 1679-1681 годах. Это было первое каменное гражданское здание в городе. В 1780 году здесь останавливалась императрица Екатерина II. В 1957 году ратуша была взорвана, восстановлена в 2008 году.',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Mogilev_Ratusha_1918.jpg/800px-Mogilev_Ratusha_1918.jpg',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Mogilev_Ratusha_2020.jpg/800px-Mogilev_Ratusha_2020.jpg'],
+            
             ['Собор Трех Святителей', 'monument', 'ул. Первомайская, 75', 53.9002, 30.3325, '1903-1914',
              'Уникальный храм в неорусском стиле.',
-             'Строительство собора началось в 1903 году...',
+             'Строительство собора началось в 1903 году и было завершено в 1914 году. В 1938 году собор был закрыт, в 1989 году храм возвращен верующим.',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Mogilev_Three_Saints_Cathedral_old.jpg/800px-Mogilev_Three_Saints_Cathedral_old.jpg',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mogilev_Three_Saints_Cathedral.jpg/800px-Mogilev_Three_Saints_Cathedral.jpg'],
+            
             ['Архиерейский дворец', 'monument', 'ул. Комсомольская, 4', 53.8967, 30.3292, '1780',
              'Бывшая резиденция архиепископа.',
-             'Дворец построен в 1780 году для Екатерины II...',
+             'Дворец построен в 1780 году для Екатерины II. Сегодня здесь находится Могилевский областной краеведческий музей.',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Mogilev_Bishop_Palace_old.jpg/800px-Mogilev_Bishop_Palace_old.jpg',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Mogilev_Bishop_Palace.jpg/800px-Mogilev_Bishop_Palace.jpg'],
+            
             ['Памятник Звездочету', 'monument', 'ул. Ленинская, 22', 53.8938, 30.3330, '2003',
              'Современный символ Могилева.',
-             'Памятник установлен в 2003 году...',
+             'Памятник установлен в 2003 году. Согласно легенде, если загадать желание и потереть нос звездочету, оно сбудется.',
              'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EЛенинская улица%3C/text%3E%3C/svg%3E',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mogilev_Astrologer.jpg/800px-Mogilev_Astrologer.jpg'],
+            
             ['Николаевский монастырь', 'monument', 'ул. Болдина, 5', 53.8985, 30.3278, '1669',
              'Древний монастырский комплекс.',
-             'Монастырь основан в 1669 году...',
+             'Монастырь основан в 1669 году. Сегодня действующий женский монастырь.',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Mogilev_St_Nicholas_Monastery_old.jpg/800px-Mogilev_St_Nicholas_Monastery_old.jpg',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Mogilev_St_Nicholas_Monastery.jpg/800px-Mogilev_St_Nicholas_Monastery.jpg'],
+            
             ['Ленинская улица', 'street', 'ул. Ленинская', 53.8940, 30.3320, 'XVI век',
-             'Главная пешеходная улица города...',
-             'Бывшая Замковая улица...',
+             'Главная пешеходная улица города, исторический центр.',
+             'Бывшая Замковая улица. Здесь расположены главные достопримечательности Могилева.',
              'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EЛенинская улица%3C/text%3E%3C/svg%3E',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mogilev_Astrologer.jpg/800px-Mogilev_Astrologer.jpg'],
+            
             ['Первомайская улица', 'street', 'ул. Первомайская', 53.8995, 30.3330, 'XIX век',
-             'Одна из старейших улиц...',
-             'Проходит через исторический центр...',
+             'Одна из старейших улиц Могилева.',
+             'Проходит через исторический центр. Здесь расположены многие памятники архитектуры.',
              'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EПервомайская улица%3C/text%3E%3C/svg%3E',
              'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mogilev_Three_Saints_Cathedral.jpg/800px-Mogilev_Three_Saints_Cathedral.jpg']
         ];
         const stmt = db.prepare("INSERT INTO places (name, category, address, lat, lng, year, description, full_history, old_image, new_image) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         places.forEach(p => stmt.run(p));
         stmt.finalize();
+        console.log('✅ Добавлены тестовые места');
     }
 });
 
