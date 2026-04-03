@@ -185,48 +185,31 @@
             opacity: 0.9;
         }
 
-        .comparison-container {
+        /* Карточка - только одно фото (современное) */
+        .card-image-container {
             position: relative;
             width: 100%;
             height: 220px;
             overflow: hidden;
             background: #e8e0d5;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: pan-y pinch-zoom;
+            cursor: pointer;
         }
 
-        .comparison-img {
-            position: absolute;
+        .card-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
             object-position: center 30%;
             transition: all 0.3s ease;
             cursor: pointer;
-            pointer-events: auto;
             -webkit-user-drag: none;
             user-select: none;
         }
 
-        .old-img {
-            z-index: 1;
-        }
-
-        .new-img {
-            z-index: 2;
-            width: 50%;
-            border-right: 3px solid #ffc107;
-        }
-
-        .comparison-container:hover .new-img,
-        .comparison-container:active .new-img {
-            width: 100%;
-        }
-
-        .img-label {
+        .card-image-label {
             position: absolute;
             bottom: 8px;
+            right: 8px;
             background: rgba(0,0,0,0.7);
             color: white;
             padding: 4px 10px;
@@ -235,17 +218,6 @@
             font-weight: 500;
             z-index: 3;
             pointer-events: none;
-        }
-
-        .label-old {
-            left: 8px;
-            background: #6b5e3a;
-        }
-
-        .label-new {
-            right: 8px;
-            background: #ffc107;
-            color: #4a3b2c;
         }
 
         .place-card-info {
@@ -319,6 +291,7 @@
             height: 100%;
         }
 
+        /* Детальная страница - горизонтальные фото */
         .detail-page {
             background: white;
             border-radius: 24px;
@@ -337,22 +310,52 @@
             margin-bottom: 6px;
         }
 
-        .detail-images {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
+        .detail-compare {
+            display: flex;
+            flex-direction: row;
             gap: 2px;
             background: #e8e0d5;
         }
 
-        .detail-images img {
-            width: 100%;
-            height: auto;
-            max-height: 300px;
-            object-fit: contain;
+        .detail-compare-item {
+            flex: 1;
+            position: relative;
             background: #e8e0d5;
+            min-height: 280px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .detail-compare-item img {
+            width: 100%;
+            height: 100%;
+            min-height: 280px;
+            object-fit: cover;
+            object-position: center;
             cursor: pointer;
             -webkit-user-drag: none;
             user-select: none;
+        }
+
+        .detail-compare-label {
+            position: absolute;
+            bottom: 12px;
+            left: 12px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: 500;
+            z-index: 3;
+            pointer-events: none;
+        }
+
+        .detail-compare-label.right {
+            left: auto;
+            right: 12px;
         }
 
         .detail-content {
@@ -1098,13 +1101,16 @@
             .map-container {
                 height: 280px;
             }
-            .detail-images {
-                grid-template-columns: 1fr;
+            .detail-compare {
+                flex-direction: column;
             }
-            .detail-images img {
-                max-height: 250px;
+            .detail-compare-item {
+                min-height: 220px;
             }
-            .comparison-container {
+            .detail-compare-item img {
+                min-height: 220px;
+            }
+            .card-image-container {
                 height: 180px;
             }
             .card-btn {
@@ -1896,11 +1902,9 @@
                             <h3>${escapeHtml(place.name)}</h3>
                             <p>📍 ${escapeHtml(place.address)}</p>
                         </div>
-                        <div class="comparison-container">
-                            <img class="comparison-img old-img" src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" onclick="event.stopPropagation(); openFullscreen('${place.old_image}')" draggable="false">
-                            <img class="comparison-img new-img" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" onclick="event.stopPropagation(); openFullscreen('${place.new_image}')" draggable="false">
-                            <span class="img-label label-old">📷 ТОГДА</span>
-                            <span class="img-label label-new">📸 СЕЙЧАС</span>
+                        <div class="card-image-container" onclick="event.stopPropagation(); showDetailPage(${place.id})">
+                            <img class="card-image" src="${place.new_image}" alt="${escapeHtml(place.name)}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                            <span class="card-image-label">📸 СЕЙЧАС</span>
                         </div>
                         <div class="place-card-info">
                             <p>${escapeHtml(place.description.substring(0, 100))}${place.description && place.description.length > 100 ? '...' : ''}</p>
@@ -1939,9 +1943,15 @@
                         <div>📍 ${escapeHtml(place.address)}</div>
                         <div>📅 ${escapeHtml(place.year)}</div>
                     </div>
-                    <div class="detail-images">
-                        <img src="${place.old_image}" onclick="openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                        <img src="${place.new_image}" onclick="openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                    <div class="detail-compare">
+                        <div class="detail-compare-item">
+                            <img src="${place.old_image}" onclick="openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                            <span class="detail-compare-label">📷 ТОГДА</span>
+                        </div>
+                        <div class="detail-compare-item">
+                            <img src="${place.new_image}" onclick="openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                            <span class="detail-compare-label right">📸 СЕЙЧАС</span>
+                        </div>
                     </div>
                     <div class="detail-content">
                         <h3>📖 Описание</h3>
@@ -2027,11 +2037,9 @@
                                 <h3>${escapeHtml(place.name)}</h3>
                                 <p>📍 ${escapeHtml(place.address)}</p>
                             </div>
-                            <div class="comparison-container">
-                                <img class="comparison-img old-img" src="${place.old_image}" onclick="event.stopPropagation(); openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                                <img class="comparison-img new-img" src="${place.new_image}" onclick="event.stopPropagation(); openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                                <span class="img-label label-old">📷 ТОГДА</span>
-                                <span class="img-label label-new">📸 СЕЙЧАС</span>
+                            <div class="card-image-container" onclick="event.stopPropagation(); showDetailPage(${place.id})">
+                                <img class="card-image" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                                <span class="card-image-label">📸 СЕЙЧАС</span>
                             </div>
                             <div class="place-card-info">
                                 <p>${escapeHtml(place.description.substring(0, 100))}...</p>
