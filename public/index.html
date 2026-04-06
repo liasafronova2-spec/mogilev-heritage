@@ -149,6 +149,91 @@
             padding: 20px 16px;
         }
 
+        /* Стили поиска */
+        .search-container {
+            background: white;
+            border-radius: 60px;
+            padding: 5px 15px;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .search-input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+        .search-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #b0a082;
+            pointer-events: none;
+        }
+        #searchInput {
+            width: 100%;
+            padding: 12px 12px 12px 40px;
+            border: 1px solid #e8dbbc;
+            border-radius: 40px;
+            font-size: 1em;
+            background: #fef9f0;
+            transition: 0.2s;
+        }
+        #searchInput:focus {
+            outline: none;
+            border-color: #6b5e3a;
+            box-shadow: 0 0 0 2px rgba(107,94,58,0.2);
+        }
+        .search-clear {
+            background: none;
+            border: none;
+            font-size: 1.2em;
+            cursor: pointer;
+            color: #b0a082;
+            padding: 8px;
+            border-radius: 50%;
+            transition: 0.2s;
+        }
+        .search-clear:hover {
+            background: #f0e8dc;
+            color: #6b5e3a;
+        }
+        .search-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+            z-index: 100;
+            max-height: 250px;
+            overflow-y: auto;
+            margin-top: 8px;
+            display: none;
+        }
+        .search-suggestions.active {
+            display: block;
+        }
+        .suggestion-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0e8dc;
+            transition: 0.1s;
+        }
+        .suggestion-item:hover {
+            background: #faf3e8;
+            color: #6b5e3a;
+        }
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Сетка карточек - исправлено для одинаковой высоты */
         .places-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -162,6 +247,9 @@
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.08);
             transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
         }
 
         .place-card:hover {
@@ -173,11 +261,13 @@
             background: linear-gradient(135deg, #6b5e3a, #7d6e46);
             color: white;
             padding: 14px;
+            flex-shrink: 0;
         }
 
         .place-card-header h3 {
             font-size: 1.1em;
             margin-bottom: 4px;
+            line-height: 1.3;
         }
 
         .place-card-header p {
@@ -185,21 +275,21 @@
             opacity: 0.9;
         }
 
-        /* Карточка — только современное фото */
         .card-image-container {
             position: relative;
             width: 100%;
-            height: 220px;
+            height: 200px;
             overflow: hidden;
             background: #e8e0d5;
             cursor: pointer;
+            flex-shrink: 0;
         }
 
         .card-image {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center 30%;
+            object-position: center;
             transition: all 0.3s ease;
             cursor: pointer;
             -webkit-user-drag: none;
@@ -222,6 +312,9 @@
 
         .place-card-info {
             padding: 14px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
         }
 
         .place-card-info p {
@@ -229,17 +322,19 @@
             color: #5a4e3a;
             margin-bottom: 12px;
             line-height: 1.4;
+            flex: 1;
         }
 
         .card-buttons {
             display: flex;
             gap: 10px;
-            margin-top: 10px;
+            margin-top: 8px;
+            flex-shrink: 0;
         }
 
         .card-btn {
             flex: 1;
-            padding: 8px 12px;
+            padding: 10px 12px;
             border: none;
             border-radius: 30px;
             font-size: 0.75em;
@@ -271,7 +366,6 @@
             background: linear-gradient(135deg, #6b5e3a, #7d6e46);
             color: white;
             border: none;
-            padding: 8px 12px;
             border-radius: 40px;
             font-size: 0.75rem;
             font-weight: 600;
@@ -329,7 +423,6 @@
             height: 100%;
         }
 
-        /* Кастомные маркеры и стилизация карты */
         .custom-marker {
             background: linear-gradient(135deg, #6b5e3a, #7d6e46);
             border: 2px solid #ffc107;
@@ -384,7 +477,7 @@
             }
         }
 
-        /* Детальная страница — горизонтальные фото */
+        /* Детальная страница */
         .detail-page {
             background: white;
             border-radius: 24px;
@@ -1336,6 +1429,10 @@
         let currentPlaceId = null;
         let userAvatar = localStorage.getItem('userAvatar') || null;
         
+        // Переменные для поиска
+        let searchQuery = '';
+        let searchTimeout = null;
+        
         // Переменные для загрузки фото
         let selectedOldImage = null;
         let selectedNewImage = null;
@@ -1946,12 +2043,89 @@
             await requestPasswordReset(email);
         }
 
-        function initMap() {
+        // ========== ФУНКЦИИ ПОИСКА И ФИЛЬТРАЦИИ ==========
+        
+        // Получить текущий фильтр по категории в зависимости от страницы
+        function getCategoryFilter() {
+            if (currentPage === 'monuments') return 'monument';
+            if (currentPage === 'streets') return 'street';
+            return null; // main - все категории
+        }
+        
+        // Фильтрация мест по категории и поисковому запросу
+        function getFilteredPlaces() {
+            let filtered = [...placesData];
+            const categoryFilter = getCategoryFilter();
+            if (categoryFilter) {
+                filtered = filtered.filter(p => p.category === categoryFilter);
+            }
+            if (searchQuery.trim() !== '') {
+                const query = searchQuery.trim().toLowerCase();
+                filtered = filtered.filter(p => p.name.toLowerCase().includes(query));
+            }
+            return filtered;
+        }
+        
+        // Обновить отображение сетки и карты на основе текущего поиска/категории
+        function updateDisplay() {
+            const filteredPlaces = getFilteredPlaces();
+            renderPlacesGrid(filteredPlaces);
+            initMap(filteredPlaces);
+        }
+        
+        // Рендер сетки мест
+        function renderPlacesGrid(placesToShow) {
+            const grid = document.getElementById('placesGrid');
+            if (!grid) return;
+            
+            if (!placesToShow.length) {
+                grid.innerHTML = '<div style="text-align:center; padding:40px; background:white; border-radius:24px;">🔍 Ничего не найдено. Попробуйте изменить запрос.</div>';
+                return;
+            }
+            
+            grid.innerHTML = placesToShow.map(place => {
+                const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
+                return `
+                    <div class="place-card">
+                        <div class="place-card-header">
+                            <h3>${escapeHtml(place.name)}</h3>
+                            <p>📍 ${escapeHtml(place.address)}</p>
+                        </div>
+                        <div class="card-image-container" onclick="event.stopPropagation(); showDetailPage(${place.id})">
+                            <img class="card-image" src="${place.new_image}" alt="${escapeHtml(place.name)}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                            <span class="card-image-label">📸 СЕЙЧАС</span>
+                        </div>
+                        <div class="place-card-info">
+                            <p>${escapeHtml(place.description ? place.description.substring(0, 100) : '')}${place.description && place.description.length > 100 ? '...' : ''}</p>
+                            <div class="card-buttons">
+                                <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
+                                <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Инициализация карты с возможностью передать массив мест
+        function initMap(placesToShow = null) {
             if (map) map.remove();
-            if (!document.getElementById('map')) return;
-            map = L.map('map').setView([53.8960, 30.3300], 14);
+            const mapContainer = document.getElementById('map');
+            if (!mapContainer) return;
+            
+            const placesForMap = placesToShow || getFilteredPlaces();
+            if (!placesForMap.length) {
+                // Если нет мест, показываем карту по центру Могилёва без маркеров
+                map = L.map('map').setView([53.8960, 30.3300], 13);
+                L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(map);
+                return;
+            }
+            
+            const bounds = L.latLngBounds(placesForMap.map(p => [p.lat, p.lng]));
+            map = L.map('map').fitBounds(bounds);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 }).addTo(map);
-            placesData.forEach((place, i) => {
+            
+            placesForMap.forEach((place, i) => {
                 const customIcon = L.divIcon({
                     html: `<div class="custom-marker">${i+1}</div>`,
                     iconSize: [36, 36],
@@ -1967,7 +2141,100 @@
                     `);
             });
         }
-
+        
+        // Автодополнение: показать подсказки на основе введённого текста
+        function updateSuggestions() {
+            const suggestionsContainer = document.getElementById('searchSuggestions');
+            if (!suggestionsContainer) return;
+            
+            const query = searchQuery.trim().toLowerCase();
+            if (query.length < 2) {
+                suggestionsContainer.classList.remove('active');
+                return;
+            }
+            
+            const filteredPlaces = placesData.filter(p => p.name.toLowerCase().startsWith(query) || p.name.toLowerCase().includes(query));
+            const uniqueNames = [...new Map(filteredPlaces.map(p => [p.name, p])).values()];
+            const suggestions = uniqueNames.slice(0, 5);
+            
+            if (suggestions.length === 0) {
+                suggestionsContainer.classList.remove('active');
+                return;
+            }
+            
+            suggestionsContainer.innerHTML = suggestions.map(p => `
+                <div class="suggestion-item" onclick="selectSuggestion('${escapeHtml(p.name).replace(/'/g, "\\'")}')">
+                    🔍 ${escapeHtml(p.name)}
+                </div>
+            `).join('');
+            suggestionsContainer.classList.add('active');
+        }
+        
+        window.selectSuggestion = function(name) {
+            const input = document.getElementById('searchInput');
+            if (input) input.value = name;
+            searchQuery = name;
+            updateSuggestions();
+            updateDisplay();
+            // Скрыть подсказки после выбора
+            document.getElementById('searchSuggestions').classList.remove('active');
+        };
+        
+        function clearSearch() {
+            const input = document.getElementById('searchInput');
+            if (input) input.value = '';
+            searchQuery = '';
+            updateSuggestions();
+            updateDisplay();
+        }
+        
+        // Создать HTML поисковой строки
+        function renderSearchBar() {
+            return `
+                <div class="search-container">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Поиск места по названию..." autocomplete="off">
+                        <div id="searchSuggestions" class="search-suggestions"></div>
+                    </div>
+                    <button class="search-clear" id="searchClearBtn" title="Очистить">✖</button>
+                </div>
+            `;
+        }
+        
+        function setupSearchEvents() {
+            const searchInput = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('searchClearBtn');
+            const suggestionsContainer = document.getElementById('searchSuggestions');
+            
+            if (!searchInput) return;
+            
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                if (searchTimeout) clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    updateSuggestions();
+                    updateDisplay();
+                }, 300);
+            });
+            
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    searchQuery = '';
+                    updateSuggestions();
+                    updateDisplay();
+                });
+            }
+            
+            // Закрыть подсказки при клике вне
+            document.addEventListener('click', (e) => {
+                if (suggestionsContainer && !searchInput.contains(e.target) && !suggestionsContainer.contains(e.target)) {
+                    suggestionsContainer.classList.remove('active');
+                }
+            });
+        }
+        
         function showOnMap(placeId) {
             const place = placesData.find(p => p.id === placeId);
             if (place) {
@@ -1994,193 +2261,40 @@
         function formatDate(date) { const d = new Date(date); return `${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}`; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
-        function renderMainPage() {
-            const grid = document.getElementById('placesGrid');
-            if (!grid) return;
-            if (!placesData.length) { grid.innerHTML = '<div style="text-align:center; padding:40px;">Загрузка...</div>'; return; }
-            grid.innerHTML = placesData.map(place => {
-                const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
-                return `
-                    <div class="place-card">
-                        <div class="place-card-header">
-                            <h3>${escapeHtml(place.name)}</h3>
-                            <p>📍 ${escapeHtml(place.address)}</p>
-                        </div>
-                        <div class="card-image-container" onclick="event.stopPropagation(); showDetailPage(${place.id})">
-                            <img class="card-image" src="${place.new_image}" alt="${escapeHtml(place.name)}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                            <span class="card-image-label">📸 СЕЙЧАС</span>
-                        </div>
-                        <div class="place-card-info">
-                            <p>${escapeHtml(place.description.substring(0, 100))}${place.description && place.description.length > 100 ? '...' : ''}</p>
-                            <div class="card-buttons">
-                                <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
-                                <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        window.showDetailPage = function(placeId) {
-            const place = placesData.find(p => p.id === placeId);
-            if (!place) return;
-            currentPlaceId = placeId;
-            const placeReviews = reviews.filter(r => r.place_id === placeId && !r.parent_id);
-            const isLoggedIn = !!currentUser;
-            const commentFormHtml = isLoggedIn ? `
-                <div class="comment-form">
-                    <textarea id="detailCommentText_${place.id}" placeholder="Поделитесь впечатлениями..."></textarea>
-                    <button class="comment-submit" onclick="submitDetailComment(${place.id})">📝 Отправить отзыв</button>
-                </div>
-            ` : `
-                <div class="comment-form" style="text-align:center; background:#faf6ed; padding:20px; border-radius:16px;">
-                    <p>🔒 Чтобы оставить отзыв, <a href="#" onclick="showLoginPage(); return false;">войдите</a> или <a href="#" onclick="showRegisterPage(); return false;">зарегистрируйтесь</a>.</p>
-                </div>
-            `;
-
-            const html = `
-                <button class="back-btn" onclick="goBackToMain()">← На главную</button>
-                <div class="detail-page">
-                    <div class="detail-header">
-                        <h2>${escapeHtml(place.name)}</h2>
-                        <div>📍 ${escapeHtml(place.address)}</div>
-                        <div>📅 ${escapeHtml(place.year)}</div>
-                    </div>
-                    <div class="detail-compare">
-                        <div class="detail-compare-item">
-                            <img src="${place.old_image}" onclick="openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                            <span class="detail-compare-label">📷 ТОГДА</span>
-                        </div>
-                        <div class="detail-compare-item">
-                            <img src="${place.new_image}" onclick="openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                            <span class="detail-compare-label right">📸 СЕЙЧАС</span>
-                        </div>
-                    </div>
-                    <div class="detail-content">
-                        <h3>📖 Описание</h3>
-                        <p>${escapeHtml(place.description)}</p>
-                        <h3>📜 История</h3>
-                        <p>${escapeHtml(place.full_history)}</p>
-                    </div>
-                </div>
-                <div class="comments-section">
-                    <div class="comments-title">💬 Отзывы (${placeReviews.length})</div>
-                    ${commentFormHtml}
-                    <div class="comments-list">
-                        ${placeReviews.length === 0 ? '<div style="text-align:center; padding:30px;">✨ Пока нет отзывов</div>' : 
-                            placeReviews.slice().reverse().map(review => {
-                                const replies = reviews.filter(r => r.parent_id === review.id);
-                                const isOwner = currentUser && review.user_id === currentUser.id;
-                                const isAdmin = currentUser && currentUser.is_admin === 1;
-                                return `
-                                    <div class="comment-item">
-                                        <div class="comment-header">
-                                            <div><span class="comment-author">${escapeHtml(review.user_name)}</span></div>
-                                            <div class="comment-date">${formatDate(review.created_at)}</div>
-                                        </div>
-                                        <div class="comment-text">${escapeHtml(review.text)}${review.edited ? ' <span style="font-size:0.6em;">(ред.)</span>' : ''}</div>
-                                        <div class="comment-actions">
-                                            <button class="comment-btn" onclick="showReplyForm(${review.id})">💬 Ответить</button>
-                                            ${(isOwner || isAdmin) ? `<button class="comment-btn" onclick="editCommentPrompt(${review.id})">✏️ Ред.</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${review.id})">🗑️ Удалить</button>` : ''}
-                                        </div>
-                                        <div id="replyForm-${review.id}" class="reply-form">
-                                            <textarea id="replyText-${review.id}" placeholder="Ваш ответ..."></textarea>
-                                            <button class="comment-submit" onclick="submitReply(${review.id})">Ответить</button>
-                                        </div>
-                                        ${replies.length ? `<div class="replies">${replies.map(r => `<div class="reply-item"><strong>↳ ${escapeHtml(r.user_name)}</strong><div>${escapeHtml(r.text)}</div><div class="comment-date">${formatDate(r.created_at)}</div>${(currentUser && (r.user_id === currentUser.id || currentUser.is_admin === 1)) ? `<div><button class="comment-btn" onclick="editCommentPrompt(${r.id})">✏️</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${r.id})">🗑️</button></div>` : ''}</div>`).join('')}</div>` : ''}
-                                    </div>
-                                `;
-                            }).join('')
-                        }
-                    </div>
-                </div>
-            `;
-            document.getElementById('app').innerHTML = html;
-            window.scrollTo(0, 0);
-        };
-
-        async function submitDetailComment(placeId) {
-            const text = document.getElementById(`detailCommentText_${placeId}`).value;
-            if (await addComment(placeId, text)) {
-                document.getElementById(`detailCommentText_${placeId}`).value = '';
-                showDetailPage(placeId);
-            }
-        }
-
-        function showReplyForm(commentId) { const form = document.getElementById(`replyForm-${commentId}`); if (form) form.classList.toggle('active'); }
-        async function submitReply(parentId) {
-            const text = document.getElementById(`replyText-${parentId}`).value;
-            if (await addReply(parentId, text)) {
-                document.getElementById(`replyText-${parentId}`).value = '';
-                document.getElementById(`replyForm-${parentId}`).classList.remove('active');
-                showDetailPage(currentPlaceId);
-            }
-        }
-        async function editCommentPrompt(id) {
-            const comment = reviews.find(r => r.id === id);
-            const newText = prompt('Редактировать отзыв:', comment.text);
-            if (newText && newText.trim()) await editComment(id, newText);
-        }
-        async function deleteCommentPrompt(id) {
-            if (confirm('Удалить отзыв?')) await deleteComment(id);
-        }
-        function goBackToMain() { renderMainPageView(); }
-
-        function renderCategoryPage(category) {
-            const filtered = placesData.filter(p => p.category === category);
-            const grid = document.getElementById('placesGrid');
-            if (!grid) return;
-            const names = { monument: '🏛️ Памятники', street: '🛣️ Улицы' };
-            grid.innerHTML = `<div style="font-size:1.3em; color:#6b5e3a; margin-bottom:20px;">${names[category]}</div>` +
-                filtered.map(place => {
-                    const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
-                    return `
-                        <div class="place-card">
-                            <div class="place-card-header">
-                                <h3>${escapeHtml(place.name)}</h3>
-                                <p>📍 ${escapeHtml(place.address)}</p>
-                            </div>
-                            <div class="card-image-container" onclick="event.stopPropagation(); showDetailPage(${place.id})">
-                                <img class="card-image" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                                <span class="card-image-label">📸 СЕЙЧАС</span>
-                            </div>
-                            <div class="place-card-info">
-                                <p>${escapeHtml(place.description.substring(0, 100))}...</p>
-                                <div class="card-buttons">
-                                    <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
-                                    <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-        }
-
+        // Рендер главной страницы (с поиском)
         function renderMainPageView() {
             currentPage = 'main';
             document.getElementById('app').innerHTML = `
+                ${renderSearchBar()}
                 <div class="places-grid" id="placesGrid"></div>
                 <div class="map-section">
                     <div class="map-title">🗺️ Карта исторических мест Могилева</div>
                     <div class="map-container"><div id="map"></div></div>
                 </div>
             `;
-            renderMainPage();
-            initMap();
+            setupSearchEvents();
+            updateDisplay();
+        }
+        
+        // Рендер страницы категории (с поиском)
+        function renderCategoryPage(category) {
+            currentPage = category === 'monument' ? 'monuments' : 'streets';
+            document.getElementById('app').innerHTML = `
+                ${renderSearchBar()}
+                <div class="places-grid" id="placesGrid"></div>
+                <div class="map-section">
+                    <div class="map-title">🗺️ Карта исторических мест Могилева</div>
+                    <div class="map-container"><div id="map"></div></div>
+                </div>
+            `;
+            setupSearchEvents();
+            updateDisplay();
         }
 
         function renderCurrentPage() {
             if (currentPage === 'main') renderMainPageView();
-            else if (currentPage === 'monuments') {
-                document.getElementById('app').innerHTML = `<div class="places-grid" id="placesGrid"></div><div class="map-section"><div class="map-title">🗺️ Карта</div><div class="map-container"><div id="map"></div></div></div>`;
-                renderCategoryPage('monument');
-                initMap();
-            } else if (currentPage === 'streets') {
-                document.getElementById('app').innerHTML = `<div class="places-grid" id="placesGrid"></div><div class="map-section"><div class="map-title">🗺️ Карта</div><div class="map-container"><div id="map"></div></div></div>`;
-                renderCategoryPage('street');
-                initMap();
-            }
+            else if (currentPage === 'monuments') renderCategoryPage('monument');
+            else if (currentPage === 'streets') renderCategoryPage('street');
         }
 
         // Админ-панель
@@ -2370,27 +2484,113 @@
             clearImagePreviews();
         }
 
-        window.showDetailPage = showDetailPage;
-        window.showOnMap = showOnMap;
-        window.goBackToMain = goBackToMain;
-        window.closeMapModal = closeMapModal;
-        window.showReplyForm = showReplyForm;
-        window.submitReply = submitReply;
-        window.editCommentPrompt = editCommentPrompt;
-        window.deleteCommentPrompt = deleteCommentPrompt;
-        window.submitDetailComment = submitDetailComment;
-        window.closeAdminPanel = closeAdminPanel;
-        window.showLoginPage = showLoginPage;
-        window.showRegisterPage = showRegisterPage;
-        window.submitLoginPage = submitLoginPage;
-        window.submitRegisterPage = submitRegisterPage;
-        window.submitResetPassword = submitResetPassword;
-        window.showProfilePage = showProfilePage;
-        window.uploadAvatar = uploadAvatar;
-        window.openFullscreen = openFullscreen;
-        window.closeFullscreen = closeFullscreen;
-        window.logout = logout;
+        // Детальная страница (без поиска на ней)
+        window.showDetailPage = function(placeId) {
+            const place = placesData.find(p => p.id === placeId);
+            if (!place) return;
+            currentPlaceId = placeId;
+            const placeReviews = reviews.filter(r => r.place_id === placeId && !r.parent_id);
+            const isLoggedIn = !!currentUser;
+            const commentFormHtml = isLoggedIn ? `
+                <div class="comment-form">
+                    <textarea id="detailCommentText_${place.id}" placeholder="Поделитесь впечатлениями..."></textarea>
+                    <button class="comment-submit" onclick="submitDetailComment(${place.id})">📝 Отправить отзыв</button>
+                </div>
+            ` : `
+                <div class="comment-form" style="text-align:center; background:#faf6ed; padding:20px; border-radius:16px;">
+                    <p>🔒 Чтобы оставить отзыв, <a href="#" onclick="showLoginPage(); return false;">войдите</a> или <a href="#" onclick="showRegisterPage(); return false;">зарегистрируйтесь</a>.</p>
+                </div>
+            `;
 
+            const html = `
+                <button class="back-btn" onclick="goBackToMain()">← На главную</button>
+                <div class="detail-page">
+                    <div class="detail-header">
+                        <h2>${escapeHtml(place.name)}</h2>
+                        <div>📍 ${escapeHtml(place.address)}</div>
+                        <div>📅 ${escapeHtml(place.year)}</div>
+                    </div>
+                    <div class="detail-compare">
+                        <div class="detail-compare-item">
+                            <img src="${place.old_image}" onclick="openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                            <span class="detail-compare-label">📷 ТОГДА</span>
+                        </div>
+                        <div class="detail-compare-item">
+                            <img src="${place.new_image}" onclick="openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                            <span class="detail-compare-label right">📸 СЕЙЧАС</span>
+                        </div>
+                    </div>
+                    <div class="detail-content">
+                        <h3>📖 Описание</h3>
+                        <p>${escapeHtml(place.description)}</p>
+                        <h3>📜 История</h3>
+                        <p>${escapeHtml(place.full_history)}</p>
+                    </div>
+                </div>
+                <div class="comments-section">
+                    <div class="comments-title">💬 Отзывы (${placeReviews.length})</div>
+                    ${commentFormHtml}
+                    <div class="comments-list">
+                        ${placeReviews.length === 0 ? '<div style="text-align:center; padding:30px;">✨ Пока нет отзывов</div>' : 
+                            placeReviews.slice().reverse().map(review => {
+                                const replies = reviews.filter(r => r.parent_id === review.id);
+                                const isOwner = currentUser && review.user_id === currentUser.id;
+                                const isAdmin = currentUser && currentUser.is_admin === 1;
+                                return `
+                                    <div class="comment-item">
+                                        <div class="comment-header">
+                                            <div><span class="comment-author">${escapeHtml(review.user_name)}</span></div>
+                                            <div class="comment-date">${formatDate(review.created_at)}</div>
+                                        </div>
+                                        <div class="comment-text">${escapeHtml(review.text)}${review.edited ? ' <span style="font-size:0.6em;">(ред.)</span>' : ''}</div>
+                                        <div class="comment-actions">
+                                            <button class="comment-btn" onclick="showReplyForm(${review.id})">💬 Ответить</button>
+                                            ${(isOwner || isAdmin) ? `<button class="comment-btn" onclick="editCommentPrompt(${review.id})">✏️ Ред.</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${review.id})">🗑️ Удалить</button>` : ''}
+                                        </div>
+                                        <div id="replyForm-${review.id}" class="reply-form">
+                                            <textarea id="replyText-${review.id}" placeholder="Ваш ответ..."></textarea>
+                                            <button class="comment-submit" onclick="submitReply(${review.id})">Ответить</button>
+                                        </div>
+                                        ${replies.length ? `<div class="replies">${replies.map(r => `<div class="reply-item"><strong>↳ ${escapeHtml(r.user_name)}</strong><div>${escapeHtml(r.text)}</div><div class="comment-date">${formatDate(r.created_at)}</div>${(currentUser && (r.user_id === currentUser.id || currentUser.is_admin === 1)) ? `<div><button class="comment-btn" onclick="editCommentPrompt(${r.id})">✏️</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${r.id})">🗑️</button></div>` : ''}</div>`).join('')}</div>` : ''}
+                                    </div>
+                                `;
+                            }).join('')
+                        }
+                    </div>
+                </div>
+            `;
+            document.getElementById('app').innerHTML = html;
+            window.scrollTo(0, 0);
+        };
+
+        async function submitDetailComment(placeId) {
+            const text = document.getElementById(`detailCommentText_${placeId}`).value;
+            if (await addComment(placeId, text)) {
+                document.getElementById(`detailCommentText_${placeId}`).value = '';
+                showDetailPage(placeId);
+            }
+        }
+
+        function showReplyForm(commentId) { const form = document.getElementById(`replyForm-${commentId}`); if (form) form.classList.toggle('active'); }
+        async function submitReply(parentId) {
+            const text = document.getElementById(`replyText-${parentId}`).value;
+            if (await addReply(parentId, text)) {
+                document.getElementById(`replyText-${parentId}`).value = '';
+                document.getElementById(`replyForm-${parentId}`).classList.remove('active');
+                showDetailPage(currentPlaceId);
+            }
+        }
+        async function editCommentPrompt(id) {
+            const comment = reviews.find(r => r.id === id);
+            const newText = prompt('Редактировать отзыв:', comment.text);
+            if (newText && newText.trim()) await editComment(id, newText);
+        }
+        async function deleteCommentPrompt(id) {
+            if (confirm('Удалить отзыв?')) await deleteComment(id);
+        }
+        function goBackToMain() { renderCurrentPage(); }
+
+        // Навигация
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
@@ -2398,6 +2598,10 @@
                 document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
                 link.classList.add('active');
                 currentPage = page;
+                // Сбрасываем поиск при смене категории, чтобы не было путаницы
+                searchQuery = '';
+                const searchInput = document.getElementById('searchInput');
+                if (searchInput) searchInput.value = '';
                 renderCurrentPage();
                 window.scrollTo(0, 0);
             });
