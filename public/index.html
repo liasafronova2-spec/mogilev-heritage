@@ -185,7 +185,7 @@
             opacity: 0.9;
         }
 
-        /* Карточка - только одно фото (современное) */
+        /* Карточка - только старое фото */
         .card-image-container {
             position: relative;
             width: 100%;
@@ -209,7 +209,7 @@
         .card-image-label {
             position: absolute;
             bottom: 8px;
-            right: 8px;
+            left: 8px;
             background: rgba(0,0,0,0.7);
             color: white;
             padding: 4px 10px;
@@ -1903,8 +1903,8 @@
                             <p>📍 ${escapeHtml(place.address)}</p>
                         </div>
                         <div class="card-image-container" onclick="event.stopPropagation(); showDetailPage(${place.id})">
-                            <img class="card-image" src="${place.new_image}" alt="${escapeHtml(place.name)}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                            <span class="card-image-label">📸 СЕЙЧАС</span>
+                            <img class="card-image" src="${place.old_image}" alt="${escapeHtml(place.name)}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                            <span class="card-image-label">📷 ТОГДА</span>
                         </div>
                         <div class="place-card-info">
                             <p>${escapeHtml(place.description.substring(0, 100))}${place.description && place.description.length > 100 ? '...' : ''}</p>
@@ -2038,8 +2038,8 @@
                                 <p>📍 ${escapeHtml(place.address)}</p>
                             </div>
                             <div class="card-image-container" onclick="event.stopPropagation(); showDetailPage(${place.id})">
-                                <img class="card-image" src="${place.new_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                                <span class="card-image-label">📸 СЕЙЧАС</span>
+                                <img class="card-image" src="${place.old_image}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
+                                <span class="card-image-label">📷 ТОГДА</span>
                             </div>
                             <div class="place-card-info">
                                 <p>${escapeHtml(place.description.substring(0, 100))}...</p>
