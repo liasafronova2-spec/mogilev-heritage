@@ -462,7 +462,7 @@
             margin-bottom: 6px;
         }
 
-        /* Сравнение фото в две колонки */
+        /* Сравнение фото в две колонки — подпись на самом фото */
         .detail-compare {
             display: flex;
             flex-direction: row;
@@ -474,54 +474,37 @@
             flex: 1;
             position: relative;
             background: #e8e0d5;
-            min-height: 320px;
+            min-height: 300px;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            padding: 12px;
         }
 
         .detail-compare-item img {
             width: 100%;
-            height: auto;
-            max-height: 280px;
-            object-fit: contain;
+            height: 100%;
+            min-height: 300px;
+            object-fit: cover;
             object-position: center;
             cursor: pointer;
-            border-radius: 12px;
-            transition: transform 0.2s;
-            background: #f5efe6;
-        }
-
-        .detail-compare-item img:hover {
-            transform: scale(1.02);
-        }
-
-        .detail-photo-caption {
-            margin-top: 10px;
-            font-size: 0.8em;
-            color: #6b5e3a;
-            font-weight: 500;
-            background: rgba(255,255,255,0.8);
-            padding: 4px 12px;
-            border-radius: 20px;
-            display: inline-block;
+            -webkit-user-drag: none;
+            user-select: none;
         }
 
         .detail-compare-label {
             position: absolute;
-            top: 12px;
+            bottom: 12px;
             left: 12px;
             background: rgba(0,0,0,0.7);
             color: white;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.7em;
-            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 30px;
+            font-size: 0.75em;
+            font-weight: 600;
             z-index: 3;
             pointer-events: none;
+            backdrop-filter: blur(2px);
         }
 
         .detail-compare-label.right {
@@ -1026,11 +1009,6 @@
             align-items: center;
         }
 
-        .image-preview-item {
-            text-align: center;
-            position: relative;
-        }
-
         .image-preview-item img {
             width: 100px;
             height: 100px;
@@ -1243,6 +1221,7 @@
             border: none;
         }
 
+        /* Мобильная версия: фото горизонтальные, но если не влезают — скролл */
         @media (max-width: 768px) {
             .user-bar {
                 position: static;
@@ -1270,14 +1249,21 @@
             .map-container {
                 height: 280px;
             }
+            /* Фото на мобилках — горизонтально, но с возможностью скролла если не влезают */
             .detail-compare {
-                flex-direction: column;
+                flex-direction: row;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
+                -webkit-overflow-scrolling: touch;
+                gap: 0;
             }
             .detail-compare-item {
-                min-height: auto;
+                min-width: 100%;
+                scroll-snap-align: start;
+                min-height: 250px;
             }
             .detail-compare-item img {
-                max-height: 220px;
+                min-height: 250px;
             }
             .card-image-container {
                 height: 180px;
@@ -2510,9 +2496,9 @@
             const placeReviews = reviews.filter(r => r.place_id === placeId && !r.parent_id);
             const isLoggedIn = !!currentUser;
             
-            // Определяем годы для подписей фото (если есть)
-            const oldYearCaption = place.old_image_year ? `${place.old_image_year} г.` : 'ТОГДА';
-            const newYearCaption = place.new_image_year ? `${place.new_image_year} г.` : 'СЕЙЧАС';
+            // Подписи для фото (на самом фото)
+            const oldLabel = place.old_image_year ? `📷 ${place.old_image_year} г.` : '📷 ТОГДА';
+            const newLabel = place.new_image_year ? `📸 ${place.new_image_year} г.` : '📸 СЕЙЧАС';
             
             const commentFormHtml = isLoggedIn ? `
                 <div class="comment-form">
@@ -2535,14 +2521,12 @@
                     </div>
                     <div class="detail-compare">
                         <div class="detail-compare-item">
-                            <span class="detail-compare-label">📷 ${oldYearCaption}</span>
+                            <span class="detail-compare-label">${oldLabel}</span>
                             <img src="${place.old_image}" onclick="openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                            <div class="detail-photo-caption">${oldYearCaption}</div>
                         </div>
                         <div class="detail-compare-item">
-                            <span class="detail-compare-label right">📸 ${newYearCaption}</span>
+                            <span class="detail-compare-label right">${newLabel}</span>
                             <img src="${place.new_image}" onclick="openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                            <div class="detail-photo-caption">${newYearCaption}</div>
                         </div>
                     </div>
                     <div class="detail-content">
