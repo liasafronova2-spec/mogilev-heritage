@@ -1249,7 +1249,6 @@
             .map-container {
                 height: 280px;
             }
-            /* Фото на мобилках — горизонтально, но с возможностью скролла если не влезают */
             .detail-compare {
                 flex-direction: row;
                 overflow-x: auto;
@@ -1496,6 +1495,11 @@
                     renderCurrentPage();
                 }
             }
+        }
+        
+        async function loadLogs() {
+            const data = await apiRequest('/api/admin/logs');
+            if (data && !data.error) { logs = data; }
         }
         
         function refreshCommentsSection() {
@@ -2169,14 +2173,6 @@
             document.getElementById('searchSuggestions').classList.remove('active');
         };
         
-        function clearSearch() {
-            const input = document.getElementById('searchInput');
-            if (input) input.value = '';
-            searchQuery = '';
-            updateSuggestions();
-            updateDisplay();
-        }
-        
         function renderSearchBar() {
             return `
                 <div class="search-container">
@@ -2319,7 +2315,9 @@
                 alert('Доступ запрещен. Только для администратора'); 
                 return; 
             }
+            
             await loadLogs();
+            
             document.getElementById('adminPanel').innerHTML = `
                 <div id="adminPlacesPanel" style="display:block;">
                     <h4>➕ Добавить место</h4>
@@ -2361,9 +2359,11 @@
                     <div class="logs-list" id="logsList"></div>
                 </div>
             `;
+            
             renderPlacesList();
             renderLogsList();
             document.getElementById('adminModal').style.display = 'flex';
+            
             document.querySelectorAll('.admin-tab').forEach(tab => {
                 tab.addEventListener('click', () => {
                     document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
@@ -2496,7 +2496,6 @@
             const placeReviews = reviews.filter(r => r.place_id === placeId && !r.parent_id);
             const isLoggedIn = !!currentUser;
             
-            // Подписи для фото (на самом фото)
             const oldLabel = place.old_image_year ? `📷 ${place.old_image_year} г.` : '📷 ТОГДА';
             const newLabel = place.new_image_year ? `📸 ${place.new_image_year} г.` : '📸 СЕЙЧАС';
             
@@ -2622,7 +2621,7 @@
 
         document.getElementById('loginBtn').onclick = showLoginPage;
         document.getElementById('registerBtn').onclick = showRegisterPage;
-        document.getElementById('adminBtn').onclick = showAdminPanel;
+        document.getElementById('adminBtn').onclick = () => showAdminPanel();
         document.getElementById('userInfoBtn').onclick = () => {
             if (currentUser) {
                 showProfilePage();
