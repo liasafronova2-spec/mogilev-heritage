@@ -279,7 +279,6 @@
             height: 200px;
             overflow: hidden;
             background: #e8e0d5;
-            cursor: pointer;
             flex-shrink: 0;
         }
 
@@ -289,9 +288,9 @@
             object-fit: cover;
             object-position: center;
             transition: all 0.3s ease;
-            cursor: pointer;
             -webkit-user-drag: none;
             user-select: none;
+            pointer-events: none;
         }
 
         .card-image-label {
@@ -340,8 +339,6 @@
             cursor: pointer;
             text-align: center;
             transition: 0.2s;
-            position: relative;
-            z-index: 5;
         }
 
         .card-btn:active {
@@ -352,12 +349,10 @@
             background: #e8e0d5;
             color: #6b5e3a;
             border: 1px solid #d4c5ae;
-            transition: all 0.2s;
         }
 
         .btn-map:hover {
             background: #ddd0b8;
-            transform: translateY(-1px);
         }
 
         .btn-detail {
@@ -368,8 +363,6 @@
             font-size: 0.75rem;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.25s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -382,17 +375,11 @@
         }
 
         .btn-detail:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(107, 94, 58, 0.3);
             background: linear-gradient(135deg, #7d6e46, #8b7a5a);
         }
 
         .btn-detail:hover::after {
             transform: translateX(4px);
-        }
-
-        .btn-detail:active {
-            transform: translateY(1px);
         }
 
         .map-section {
@@ -456,25 +443,7 @@
             margin: 12px 16px;
         }
 
-        .leaflet-popup-tip {
-            background: white;
-        }
-
-        .leaflet-popup {
-            animation: popupFadeIn 0.2s ease-out;
-        }
-
-        @keyframes popupFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
+        /* Детальная страница — горизонтальное расположение фото */
         .detail-page {
             background: white;
             border-radius: 24px;
@@ -493,6 +462,7 @@
             margin-bottom: 6px;
         }
 
+        /* Сравнение фото в две колонки */
         .detail-compare {
             display: flex;
             flex-direction: row;
@@ -504,27 +474,45 @@
             flex: 1;
             position: relative;
             background: #e8e0d5;
-            min-height: 280px;
+            min-height: 320px;
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             overflow: hidden;
+            padding: 12px;
         }
 
         .detail-compare-item img {
             width: 100%;
-            height: 100%;
-            min-height: 280px;
-            object-fit: cover;
+            height: auto;
+            max-height: 280px;
+            object-fit: contain;
             object-position: center;
             cursor: pointer;
-            -webkit-user-drag: none;
-            user-select: none;
+            border-radius: 12px;
+            transition: transform 0.2s;
+            background: #f5efe6;
+        }
+
+        .detail-compare-item img:hover {
+            transform: scale(1.02);
+        }
+
+        .detail-photo-caption {
+            margin-top: 10px;
+            font-size: 0.8em;
+            color: #6b5e3a;
+            font-weight: 500;
+            background: rgba(255,255,255,0.8);
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
         }
 
         .detail-compare-label {
             position: absolute;
-            bottom: 12px;
+            top: 12px;
             left: 12px;
             background: rgba(0,0,0,0.7);
             color: white;
@@ -1242,8 +1230,6 @@
             max-height: 90vh;
             object-fit: contain;
             border-radius: 12px;
-            -webkit-user-drag: none;
-            user-select: none;
         }
 
         .fullscreen-close {
@@ -1288,10 +1274,10 @@
                 flex-direction: column;
             }
             .detail-compare-item {
-                min-height: 220px;
+                min-height: auto;
             }
             .detail-compare-item img {
-                min-height: 220px;
+                max-height: 220px;
             }
             .card-image-container {
                 height: 180px;
@@ -1518,7 +1504,6 @@
             const data = await apiRequest('/api/reviews');
             if (data && !data.error) { 
                 reviews = data; 
-                // Если мы на странице деталей места, обновляем только комментарии без перезагрузки всей страницы
                 if (currentPlaceId && document.getElementById('app').innerHTML.includes('detail-page')) {
                     refreshCommentsSection();
                 } else {
@@ -1527,7 +1512,6 @@
             }
         }
         
-        // Функция обновления только секции комментариев на детальной странице
         function refreshCommentsSection() {
             if (!currentPlaceId) return;
             const place = placesData.find(p => p.id === currentPlaceId);
@@ -1616,16 +1600,12 @@
             return false;
         }
         
-        // Новая функция для удаления комментария без перезагрузки страницы
         window.deleteCommentWithoutReload = async function(id) {
             if (!confirm('Удалить отзыв?')) return;
             const data = await apiRequest(`/api/reviews/${id}`, { method: 'DELETE' });
             if (data && data.message) {
-                // Удаляем комментарий из массива reviews
                 reviews = reviews.filter(r => r.id !== id);
-                // Также удаляем ответы на этот комментарий
                 reviews = reviews.filter(r => r.parent_id !== id);
-                // Обновляем только секцию комментариев
                 refreshCommentsSection();
             }
         };
@@ -2126,15 +2106,15 @@
                         <h3>${escapeHtml(place.name)}</h3>
                         <p>📍 ${escapeHtml(place.address)}</p>
                     </div>
-                    <div class="card-image-container" onclick="event.stopPropagation(); showDetailPage(${place.id})">
+                    <div class="card-image-container">
                         <img class="card-image" src="${place.new_image}" alt="${escapeHtml(place.name)}" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
                         <span class="card-image-label">📸 СЕЙЧАС</span>
                     </div>
                     <div class="place-card-info">
                         <p>${escapeHtml(place.description ? place.description.substring(0, 100) : '')}${place.description && place.description.length > 100 ? '...' : ''}</p>
                         <div class="card-buttons">
-                            <button class="card-btn btn-map" onclick="event.stopPropagation(); showOnMap(${place.id})">🗺️ Показать на карте</button>
-                            <button class="card-btn btn-detail" onclick="event.stopPropagation(); showDetailPage(${place.id})">📖 Подробнее</button>
+                            <button class="card-btn btn-map" onclick="showOnMap(${place.id})">🗺️ Показать на карте</button>
+                            <button class="card-btn btn-detail" onclick="showDetailPage(${place.id})">📖 Подробнее</button>
                         </div>
                     </div>
                 </div>
@@ -2252,7 +2232,6 @@
             });
         }
         
-        // Красивое отображение карты в модальном окне
         window.showOnMap = function(placeId) {
             const place = placesData.find(p => p.id === placeId);
             if (!place) return;
@@ -2276,26 +2255,20 @@
             setTimeout(() => {
                 const miniMapContainer = document.getElementById('modalMiniMap');
                 if (miniMapContainer) {
-                    // Удаляем предыдущую карту, если была
                     if (window.miniMap) window.miniMap.remove();
                     const miniMap = L.map('modalMiniMap').setView([place.lat, place.lng], 17);
                     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a>'
                     }).addTo(miniMap);
                     
-                    // Красивый маркер для мини-карты
-                    const greenIcon = L.divIcon({
+                    const markerIcon = L.divIcon({
                         html: `<div style="background: linear-gradient(135deg, #6b5e3a, #7d6e46); border: 2px solid #ffc107; border-radius: 50%; width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">📍</div>`,
                         iconSize: [32, 32],
                         iconAnchor: [16, 16],
                         className: ''
                     });
                     
-                    L.marker([place.lat, place.lng], { icon: greenIcon })
-                        .addTo(miniMap)
-                        .bindPopup(`<b style="color:#6b5e3a;">${place.name}</b><br>${place.address}`, { autoClose: false })
-                        .openPopup();
-                    
+                    L.marker([place.lat, place.lng], { icon: markerIcon, interactive: false }).addTo(miniMap);
                     window.miniMap = miniMap;
                 }
             }, 100);
@@ -2536,6 +2509,11 @@
             currentPlaceId = placeId;
             const placeReviews = reviews.filter(r => r.place_id === placeId && !r.parent_id);
             const isLoggedIn = !!currentUser;
+            
+            // Определяем годы для подписей фото (если есть)
+            const oldYearCaption = place.old_image_year ? `${place.old_image_year} г.` : 'ТОГДА';
+            const newYearCaption = place.new_image_year ? `${place.new_image_year} г.` : 'СЕЙЧАС';
+            
             const commentFormHtml = isLoggedIn ? `
                 <div class="comment-form">
                     <textarea id="detailCommentText_${place.id}" placeholder="Поделитесь впечатлениями..."></textarea>
@@ -2546,6 +2524,7 @@
                     <p>🔒 Чтобы оставить отзыв, <a href="#" onclick="showLoginPage(); return false;">войдите</a> или <a href="#" onclick="showRegisterPage(); return false;">зарегистрируйтесь</a>.</p>
                 </div>
             `;
+            
             const html = `
                 <button class="back-btn" onclick="goBackToMain()">← На главную</button>
                 <div class="detail-page">
@@ -2556,12 +2535,14 @@
                     </div>
                     <div class="detail-compare">
                         <div class="detail-compare-item">
+                            <span class="detail-compare-label">📷 ${oldYearCaption}</span>
                             <img src="${place.old_image}" onclick="openFullscreen('${place.old_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                            <span class="detail-compare-label">📷 ТОГДА</span>
+                            <div class="detail-photo-caption">${oldYearCaption}</div>
                         </div>
                         <div class="detail-compare-item">
+                            <span class="detail-compare-label right">📸 ${newYearCaption}</span>
                             <img src="${place.new_image}" onclick="openFullscreen('${place.new_image}')" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect width=%22400%22 height=%22300%22 fill=%22%236b5e3a%22/%3E%3Ctext x=%22200%22 y=%22150%22 fill=%22white%22 text-anchor=%22middle%22%3EФото%3C/text%3E%3C/svg%3E'" draggable="false">
-                            <span class="detail-compare-label right">📸 СЕЙЧАС</span>
+                            <div class="detail-photo-caption">${newYearCaption}</div>
                         </div>
                     </div>
                     <div class="detail-content">
@@ -2572,6 +2553,7 @@
                     </div>
                 </div>
                 <div class="comments-section">
+                    <div class="comments-title">💬 Отзывы (${placeReviews.length})</div>
                     ${commentFormHtml}
                     <div class="comments-list" id="commentsList">
                         ${placeReviews.length === 0 ? '<div style="text-align:center; padding:30px;">✨ Пока нет отзывов</div>' : 
