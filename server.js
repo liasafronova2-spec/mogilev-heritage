@@ -221,7 +221,9 @@ app.post('/api/reviews', (req, res) => {
     });
 });
 
-// Редактировать отзыв
+// ============================================================
+// ИЗМЕНЕНО: Редактировать отзыв — ТОЛЬКО свой (админ НЕ может редактировать чужие)
+// ============================================================
 app.put('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -232,7 +234,8 @@ app.put('/api/reviews/:id', (req, res) => {
         const { text } = req.body;
         db.get("SELECT * FROM reviews WHERE id = ?", [reviewId], (err, review) => {
             if (err || !review) return res.status(404).json({ error: 'Отзыв не найден' });
-            if (review.user_id !== user.id && user.is_admin !== 1) return res.status(403).json({ error: 'Нет прав' });
+            // ИЗМЕНЕНИЕ ЗДЕСЬ: убрано условие user.is_admin === 1
+            if (review.user_id !== user.id) return res.status(403).json({ error: 'Нет прав. Можно редактировать только свои отзывы.' });
             db.run("UPDATE reviews SET text = ?, edited = 1, edited_at = CURRENT_TIMESTAMP WHERE id = ?",
                 [text, reviewId], function(err) {
                     if (err) return res.status(500).json({ error: err.message });
@@ -243,7 +246,9 @@ app.put('/api/reviews/:id', (req, res) => {
     });
 });
 
-// Удалить отзыв
+// ============================================================
+// НЕ ИЗМЕНЕНО: Удалить отзыв — админ МОЖЕТ удалить чужой (остаётся как было)
+// ============================================================
 app.delete('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
