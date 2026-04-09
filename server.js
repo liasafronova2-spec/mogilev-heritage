@@ -5,6 +5,7 @@ const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const JWT_SECRET = 'mogilev-secret-key-2026';
@@ -40,7 +41,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// Функция для логирования действий
+// Функция логирования
 function logActivity(userId, action, details) {
     db.run("INSERT INTO activity_logs (user_id, action, details) VALUES (?, ?, ?)",
         [userId, action, details], (err) => {
@@ -50,7 +51,7 @@ function logActivity(userId, action, details) {
 
 // Инициализация базы данных
 function initDatabase() {
-    // Таблица пользователей
+    // Создание таблиц
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -60,7 +61,6 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Таблица мест
     db.run(`CREATE TABLE IF NOT EXISTS places (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -77,7 +77,6 @@ function initDatabase() {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Таблица отзывов
     db.run(`CREATE TABLE IF NOT EXISTS reviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         place_id INTEGER NOT NULL,
@@ -92,7 +91,6 @@ function initDatabase() {
         FOREIGN KEY (parent_id) REFERENCES reviews(id) ON DELETE CASCADE
     )`);
 
-    // Таблица логов действий
     db.run(`CREATE TABLE IF NOT EXISTS activity_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -251,7 +249,9 @@ app.post('/api/reviews', (req, res) => {
     });
 });
 
-// Редактировать отзыв
+// ============================================================
+// Редактировать отзыв — ТОЛЬКО свой (админ НЕ может редактировать чужие)
+// ============================================================
 app.put('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -262,7 +262,8 @@ app.put('/api/reviews/:id', (req, res) => {
         const { text } = req.body;
         db.get("SELECT * FROM reviews WHERE id = ?", [reviewId], (err, review) => {
             if (err || !review) return res.status(404).json({ error: 'Отзыв не найден' });
-            if (review.user_id !== user.id && user.is_admin !== 1) return res.status(403).json({ error: 'Нет прав' });
+            // Только автор может редактировать
+            if (review.user_id !== user.id) return res.status(403).json({ error: 'Нет прав. Можно редактировать только свои отзывы.' });
             db.run("UPDATE reviews SET text = ?, edited = 1, edited_at = CURRENT_TIMESTAMP WHERE id = ?",
                 [text, reviewId], function(err) {
                     if (err) return res.status(500).json({ error: err.message });
@@ -273,7 +274,9 @@ app.put('/api/reviews/:id', (req, res) => {
     });
 });
 
-// Удалить отзыв
+// ============================================================
+// Удалить отзыв — админ МОЖЕТ удалить чужой
+// ============================================================
 app.delete('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -314,7 +317,7 @@ app.post('/api/admin/places', (req, res) => {
     });
 });
 
-// Админ: обновить место
+// Админ: обновить место (редактирование)
 app.put('/api/admin/places/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -423,6 +426,6 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`📱 Локально: http://localhost:${PORT}`);
     console.log(`🔑 Админ: admin@mogilev.by / admin2026`);
     console.log(`📸 Поддержка base64 изображений включена`);
-    console.log(`💾 База данных сохранена в: ${dbPath}`);
-    console.log(`✏️ Редактирование мест доступно\n`);
+    console.log(`✏️ Редактирование мест доступно`);
+    console.log(`💾 База данных сохранена в: ${dbPath}\n`);
 });
