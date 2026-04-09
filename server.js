@@ -8,27 +8,42 @@ const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = 'mogilev-secret-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET || 'mogilev-secret-key-2026';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static('public'));
 
 // ============ НАСТРОЙКА ПОСТОЯННОГО ХРАНИЛИЩА ДЛЯ БАЗЫ ДАННЫХ ============
-// Для Render используем /data для постоянного хранения
 let dbPath;
+let dataDir;
+
+// Определяем директорию для базы данных в зависимости от окружения
 if (process.env.RENDER) {
-    // На Render используем постоянное хранилище
-    const dataDir = '/data';
-    if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
-    }
-    dbPath = path.join(dataDir, 'database.sqlite');
-    console.log('✅ Используем постоянное хранилище Render:', dbPath);
+    // На Render используем /opt/render/project/src/data (рабочая директория)
+    dataDir = path.join(__dirname, 'data');
+    console.log('🖥️ Render окружение обнаружено');
+} else if (process.env.VERCEL) {
+    dataDir = path.join('/tmp', 'mogilev-data');
 } else {
-    // Локально используем папку проекта
-    dbPath = path.join(__dirname, 'database.sqlite');
-    console.log('💻 Локальный режим:', dbPath);
+    // Локальная разработка
+    dataDir = path.join(__dirname, 'data');
+}
+
+// Создаём директорию если её нет
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log('📁 Создана директория для БД:', dataDir);
+}
+
+dbPath = path.join(dataDir, 'database.sqlite');
+console.log('💾 Путь к базе данных:', dbPath);
+
+// Проверяем права на запись
+try {
+    fs.accessSync(dataDir, fs.constants.W_OK);
+    console.log('✅ Права на запись есть');
+} catch (err) {
+    console.error('⚠️ Нет прав на запись в', dataDir, err.message);
 }
 
 // Подключаемся к базе данных
@@ -41,7 +56,7 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// Функция логирования
+// Функция для логирования действий
 function logActivity(userId, action, details) {
     db.run("INSERT INTO activity_logs (user_id, action, details) VALUES (?, ?, ?)",
         [userId, action, details], (err) => {
@@ -51,7 +66,10 @@ function logActivity(userId, action, details) {
 
 // Инициализация базы данных
 function initDatabase() {
-    // Создание таблиц
+    // Включаем foreign keys
+    db.run("PRAGMA foreign_keys = ON");
+    
+    // Таблица пользователей
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -61,6 +79,7 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // Таблица мест
     db.run(`CREATE TABLE IF NOT EXISTS places (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -77,6 +96,7 @@ function initDatabase() {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
+    // Таблица отзывов
     db.run(`CREATE TABLE IF NOT EXISTS reviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         place_id INTEGER NOT NULL,
@@ -91,6 +111,7 @@ function initDatabase() {
         FOREIGN KEY (parent_id) REFERENCES reviews(id) ON DELETE CASCADE
     )`);
 
+    // Таблица логов действий
     db.run(`CREATE TABLE IF NOT EXISTS activity_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -104,8 +125,9 @@ function initDatabase() {
     bcrypt.hash('admin2026', 10, (err, hash) => {
         if (!err) {
             db.run("INSERT OR IGNORE INTO users (email, password, name, is_admin) VALUES (?, ?, ?, 1)",
-                ['admin@mogilev.by', hash, 'Администратор']);
-            console.log('✅ Админ создан: admin@mogilev.by / admin2026');
+                ['admin@mogilev.by', hash, 'Администратор'], (err) => {
+                    if (!err) console.log('✅ Админ создан: admin@mogilev.by / admin2026');
+                });
         }
     });
 
@@ -249,9 +271,7 @@ app.post('/api/reviews', (req, res) => {
     });
 });
 
-// ============================================================
-// Редактировать отзыв — ТОЛЬКО свой (админ НЕ может редактировать чужие)
-// ============================================================
+// Редактировать отзыв
 app.put('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -262,8 +282,7 @@ app.put('/api/reviews/:id', (req, res) => {
         const { text } = req.body;
         db.get("SELECT * FROM reviews WHERE id = ?", [reviewId], (err, review) => {
             if (err || !review) return res.status(404).json({ error: 'Отзыв не найден' });
-            // Только автор может редактировать
-            if (review.user_id !== user.id) return res.status(403).json({ error: 'Нет прав. Можно редактировать только свои отзывы.' });
+            if (review.user_id !== user.id && user.is_admin !== 1) return res.status(403).json({ error: 'Нет прав' });
             db.run("UPDATE reviews SET text = ?, edited = 1, edited_at = CURRENT_TIMESTAMP WHERE id = ?",
                 [text, reviewId], function(err) {
                     if (err) return res.status(500).json({ error: err.message });
@@ -274,9 +293,7 @@ app.put('/api/reviews/:id', (req, res) => {
     });
 });
 
-// ============================================================
-// Удалить отзыв — админ МОЖЕТ удалить чужой
-// ============================================================
+// Удалить отзыв
 app.delete('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -317,7 +334,7 @@ app.post('/api/admin/places', (req, res) => {
     });
 });
 
-// Админ: обновить место (редактирование)
+// Админ: обновить место
 app.put('/api/admin/places/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -420,12 +437,53 @@ app.post('/api/logout', (req, res) => {
     res.json({ message: 'Выход выполнен' });
 });
 
+// ============ СТАТИЧЕСКИЕ ФАЙЛЫ ============
+// Проверяем наличие index.html
+const publicPath = path.join(__dirname, 'public');
+const indexPath = path.join(publicPath, 'index.html');
+const rootIndexPath = path.join(__dirname, 'index.html');
+
+if (fs.existsSync(indexPath)) {
+    app.use(express.static(publicPath));
+    console.log('✅ Статика из папки public');
+} else if (fs.existsSync(rootIndexPath)) {
+    app.use(express.static(__dirname));
+    console.log('✅ Статика из корня');
+} else {
+    console.warn('⚠️ index.html не найден!');
+    app.get('/', (req, res) => {
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Могилев сквозь время</title></head>
+            <body style="font-family: sans-serif; text-align: center; padding: 50px;">
+                <h1>🏛️ Могилев сквозь время</h1>
+                <p>Сервер работает, но файл index.html не найден.</p>
+                <p>Убедитесь, что index.html находится в папке <code>public/</code> или в корне проекта.</p>
+                <hr>
+                <p><strong>API доступно:</strong> /api/places, /api/reviews, /api/login, /api/register</p>
+                <p><strong>Админ:</strong> admin@mogilev.by / admin2026</p>
+            </body>
+            </html>
+        `);
+    });
+}
+
+// Обработка ошибок
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection:', reason);
+});
+
 // Запуск сервера
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Сервер запущен!`);
-    console.log(`📱 Локально: http://localhost:${PORT}`);
+    console.log(`📱 Порт: ${PORT}`);
     console.log(`🔑 Админ: admin@mogilev.by / admin2026`);
     console.log(`📸 Поддержка base64 изображений включена`);
-    console.log(`✏️ Редактирование мест доступно`);
-    console.log(`💾 База данных сохранена в: ${dbPath}\n`);
+    console.log(`💾 База данных: ${dbPath}`);
+    console.log(`📁 Директория данных: ${dataDir}\n`);
 });
