@@ -13,37 +13,47 @@ const JWT_SECRET = process.env.JWT_SECRET || 'mogilev-secret-key-2026';
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 
-// ============ НАСТРОЙКА ПОСТОЯННОГО ХРАНИЛИЩА ДЛЯ БАЗЫ ДАННЫХ ============
+// ============ НАСТРОЙКА ПОСТОЯННОГО ХРАНИЛИЩА ============
+// Определяем директорию для базы данных
 let dbPath;
 let dataDir;
 
-// Определяем директорию для базы данных в зависимости от окружения
-if (process.env.RENDER) {
-    // На Render используем /opt/render/project/src/data (рабочая директория)
+// Приоритет: 
+// 1. /data (Persistent Disk в Render)
+// 2. /opt/render/project/src/data (альтернатива)
+// 3. локальная папка data
+
+if (fs.existsSync('/data')) {
+    // Используем Persistent Disk Render
+    dataDir = '/data';
+    console.log('✅ Используем Persistent Disk Render: /data');
+} else if (process.env.RENDER) {
+    // Если Persistent Disk не подключен, используем рабочую директорию
     dataDir = path.join(__dirname, 'data');
-    console.log('🖥️ Render окружение обнаружено');
-} else if (process.env.VERCEL) {
-    dataDir = path.join('/tmp', 'mogilev-data');
+    console.log('⚠️ Persistent Disk не найден, использую локальную папку:', dataDir);
+    console.log('⚠️ ВНИМАНИЕ: Данные будут теряться при перезапуске!');
+    console.log('⚠️ Подключите Persistent Disk в настройках Render (Mount Path: /data)');
 } else {
     // Локальная разработка
     dataDir = path.join(__dirname, 'data');
+    console.log('💻 Локальный режим:', dataDir);
 }
 
 // Создаём директорию если её нет
 if (!fs.existsSync(dataDir)) {
     fs.mkdirSync(dataDir, { recursive: true });
-    console.log('📁 Создана директория для БД:', dataDir);
+    console.log('📁 Создана директория:', dataDir);
 }
 
 dbPath = path.join(dataDir, 'database.sqlite');
-console.log('💾 Путь к базе данных:', dbPath);
+console.log('💾 База данных:', dbPath);
 
 // Проверяем права на запись
 try {
     fs.accessSync(dataDir, fs.constants.W_OK);
     console.log('✅ Права на запись есть');
 } catch (err) {
-    console.error('⚠️ Нет прав на запись в', dataDir, err.message);
+    console.error('❌ Нет прав на запись в', dataDir);
 }
 
 // Подключаемся к базе данных
@@ -121,19 +131,27 @@ function initDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     )`);
 
-    // Создание администратора
-    bcrypt.hash('admin2026', 10, (err, hash) => {
-        if (!err) {
-            db.run("INSERT OR IGNORE INTO users (email, password, name, is_admin) VALUES (?, ?, ?, 1)",
-                ['admin@mogilev.by', hash, 'Администратор'], (err) => {
-                    if (!err) console.log('✅ Админ создан: admin@mogilev.by / admin2026');
-                });
+    // Проверяем, есть ли уже админ
+    db.get("SELECT COUNT(*) as count FROM users WHERE is_admin = 1", (err, row) => {
+        if (!err && row && row.count === 0) {
+            // Создание администратора только если нет ни одного админа
+            bcrypt.hash('admin2026', 10, (err, hash) => {
+                if (!err) {
+                    db.run("INSERT INTO users (email, password, name, is_admin) VALUES (?, ?, ?, 1)",
+                        ['admin@mogilev.by', hash, 'Администратор'], (err) => {
+                            if (!err) console.log('✅ Админ создан: admin@mogilev.by / admin2026');
+                        });
+                }
+            });
+        } else {
+            console.log('✅ Админ уже существует');
         }
     });
 
-    // Добавление тестовых мест (только если их нет)
+    // Добавление тестовых мест ТОЛЬКО если таблица пустая
     db.get("SELECT COUNT(*) as count FROM places", (err, row) => {
         if (!err && row && row.count === 0) {
+            console.log('📝 Добавляем тестовые места...');
             const places = [
                 ['Ратуша Могилева', 'monument', 'ул. Ленинская, 1А', 53.8945, 30.3310, '1679-1681',
                  'Символ магдебургского права, жемчужина архитектуры XVII века.',
@@ -156,7 +174,7 @@ function initDatabase() {
                 ['Памятник Звездочету', 'monument', 'ул. Ленинская, 22', 53.8938, 30.3330, '2003',
                  'Современный символ Могилева.',
                  'Памятник установлен в 2003 году. Согласно легенде, если загадать желание и потереть нос звездочету, оно сбудется.',
-                 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EЛенинская улица%3C/text%3E%3C/svg%3E',
+                 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mogilev_Astrologer.jpg/800px-Mogilev_Astrologer.jpg'],
                 
                 ['Николаевский монастырь', 'monument', 'ул. Болдина, 5', 53.8985, 30.3278, '1669',
@@ -168,13 +186,13 @@ function initDatabase() {
                 ['Ленинская улица', 'street', 'ул. Ленинская', 53.8940, 30.3320, 'XVI век',
                  'Главная пешеходная улица города, исторический центр.',
                  'Бывшая Замковая улица. Здесь расположены главные достопримечательности Могилева.',
-                 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EЛенинская улица%3C/text%3E%3C/svg%3E',
+                 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mogilev_Astrologer.jpg/800px-Mogilev_Astrologer.jpg'],
                 
                 ['Первомайская улица', 'street', 'ул. Первомайская', 53.8995, 30.3330, 'XIX век',
                  'Одна из старейших улиц Могилева.',
                  'Проходит через исторический центр. Здесь расположены многие памятники архитектуры.',
-                 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EПервомайская улица%3C/text%3E%3C/svg%3E',
+                 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mogilev_Three_Saints_Cathedral.jpg/800px-Mogilev_Three_Saints_Cathedral.jpg']
             ];
             
@@ -182,12 +200,13 @@ function initDatabase() {
             places.forEach(p => stmt.run(p));
             stmt.finalize();
             console.log('✅ Добавлены тестовые места');
+        } else {
+            console.log(`📊 В базе уже есть ${row?.count || 0} мест`);
         }
     });
 }
 
-// ============ API ============
-
+// ============ ВСЕ API МАРШРУТЫ (те же самые, что были) ============
 // Регистрация
 app.post('/api/register', async (req, res) => {
     const { email, password, name } = req.body;
@@ -438,35 +457,13 @@ app.post('/api/logout', (req, res) => {
 });
 
 // ============ СТАТИЧЕСКИЕ ФАЙЛЫ ============
-// Проверяем наличие index.html
 const publicPath = path.join(__dirname, 'public');
-const indexPath = path.join(publicPath, 'index.html');
-const rootIndexPath = path.join(__dirname, 'index.html');
-
-if (fs.existsSync(indexPath)) {
+if (fs.existsSync(publicPath)) {
     app.use(express.static(publicPath));
     console.log('✅ Статика из папки public');
-} else if (fs.existsSync(rootIndexPath)) {
+} else {
     app.use(express.static(__dirname));
     console.log('✅ Статика из корня');
-} else {
-    console.warn('⚠️ index.html не найден!');
-    app.get('/', (req, res) => {
-        res.send(`
-            <!DOCTYPE html>
-            <html>
-            <head><title>Могилев сквозь время</title></head>
-            <body style="font-family: sans-serif; text-align: center; padding: 50px;">
-                <h1>🏛️ Могилев сквозь время</h1>
-                <p>Сервер работает, но файл index.html не найден.</p>
-                <p>Убедитесь, что index.html находится в папке <code>public/</code> или в корне проекта.</p>
-                <hr>
-                <p><strong>API доступно:</strong> /api/places, /api/reviews, /api/login, /api/register</p>
-                <p><strong>Админ:</strong> admin@mogilev.by / admin2026</p>
-            </body>
-            </html>
-        `);
-    });
 }
 
 // Обработка ошибок
@@ -483,7 +480,15 @@ app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Сервер запущен!`);
     console.log(`📱 Порт: ${PORT}`);
     console.log(`🔑 Админ: admin@mogilev.by / admin2026`);
-    console.log(`📸 Поддержка base64 изображений включена`);
     console.log(`💾 База данных: ${dbPath}`);
-    console.log(`📁 Директория данных: ${dataDir}\n`);
+    console.log(`📁 Директория данных: ${dataDir}`);
+    
+    if (dataDir === '/data') {
+        console.log(`✅ Persistent Disk подключен! Данные будут сохранены.`);
+    } else {
+        console.log(`⚠️ ВНИМАНИЕ: Persistent Disk НЕ подключен!`);
+        console.log(`⚠️ Данные будут потеряны при перезапуске!`);
+        console.log(`⚠️ Добавьте Persistent Disk в Render: Mount Path = /data`);
+    }
+    console.log(``);
 });
