@@ -8,55 +8,26 @@ const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const JWT_SECRET = process.env.JWT_SECRET || 'mogilev-secret-key-2026';
+const JWT_SECRET = 'mogilev-secret-key-2026';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
+app.use(express.static('public'));
 
-// ============ НАСТРОЙКА ПОСТОЯННОГО ХРАНИЛИЩА ============
-// Определяем директорию для базы данных
+// ============ НАСТРОЙКА БАЗЫ ДАННЫХ ============
 let dbPath;
-let dataDir;
-
-// Приоритет: 
-// 1. /data (Persistent Disk в Render)
-// 2. /opt/render/project/src/data (альтернатива)
-// 3. локальная папка data
-
-if (fs.existsSync('/data')) {
-    // Используем Persistent Disk Render
-    dataDir = '/data';
-    console.log('✅ Используем Persistent Disk Render: /data');
-} else if (process.env.RENDER) {
-    // Если Persistent Disk не подключен, используем рабочую директорию
-    dataDir = path.join(__dirname, 'data');
-    console.log('⚠️ Persistent Disk не найден, использую локальную папку:', dataDir);
-    console.log('⚠️ ВНИМАНИЕ: Данные будут теряться при перезапуске!');
-    console.log('⚠️ Подключите Persistent Disk в настройках Render (Mount Path: /data)');
+if (process.env.RENDER) {
+    const dataDir = '/data';
+    if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+    }
+    dbPath = path.join(dataDir, 'database.sqlite');
+    console.log('✅ Используем постоянное хранилище Render:', dbPath);
 } else {
-    // Локальная разработка
-    dataDir = path.join(__dirname, 'data');
-    console.log('💻 Локальный режим:', dataDir);
+    dbPath = path.join(__dirname, 'database.sqlite');
+    console.log('💻 Локальный режим:', dbPath);
 }
 
-// Создаём директорию если её нет
-if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-    console.log('📁 Создана директория:', dataDir);
-}
-
-dbPath = path.join(dataDir, 'database.sqlite');
-console.log('💾 База данных:', dbPath);
-
-// Проверяем права на запись
-try {
-    fs.accessSync(dataDir, fs.constants.W_OK);
-    console.log('✅ Права на запись есть');
-} catch (err) {
-    console.error('❌ Нет прав на запись в', dataDir);
-}
-
-// Подключаемся к базе данных
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('❌ Ошибка подключения к БД:', err.message);
@@ -66,7 +37,6 @@ const db = new sqlite3.Database(dbPath, (err) => {
     }
 });
 
-// Функция для логирования действий
 function logActivity(userId, action, details) {
     db.run("INSERT INTO activity_logs (user_id, action, details) VALUES (?, ?, ?)",
         [userId, action, details], (err) => {
@@ -74,12 +44,7 @@ function logActivity(userId, action, details) {
         });
 }
 
-// Инициализация базы данных
 function initDatabase() {
-    // Включаем foreign keys
-    db.run("PRAGMA foreign_keys = ON");
-    
-    // Таблица пользователей
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -89,7 +54,6 @@ function initDatabase() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Таблица мест
     db.run(`CREATE TABLE IF NOT EXISTS places (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -106,7 +70,6 @@ function initDatabase() {
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Таблица отзывов
     db.run(`CREATE TABLE IF NOT EXISTS reviews (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         place_id INTEGER NOT NULL,
@@ -121,7 +84,6 @@ function initDatabase() {
         FOREIGN KEY (parent_id) REFERENCES reviews(id) ON DELETE CASCADE
     )`);
 
-    // Таблица логов действий
     db.run(`CREATE TABLE IF NOT EXISTS activity_logs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
@@ -131,67 +93,58 @@ function initDatabase() {
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
     )`);
 
-    // Проверяем, есть ли уже админ
-    db.get("SELECT COUNT(*) as count FROM users WHERE is_admin = 1", (err, row) => {
-        if (!err && row && row.count === 0) {
-            // Создание администратора только если нет ни одного админа
-            bcrypt.hash('admin2026', 10, (err, hash) => {
-                if (!err) {
-                    db.run("INSERT INTO users (email, password, name, is_admin) VALUES (?, ?, ?, 1)",
-                        ['admin@mogilev.by', hash, 'Администратор'], (err) => {
-                            if (!err) console.log('✅ Админ создан: admin@mogilev.by / admin2026');
-                        });
-                }
-            });
-        } else {
-            console.log('✅ Админ уже существует');
+    // Создание администратора
+    bcrypt.hash('admin2026', 10, (err, hash) => {
+        if (!err) {
+            db.run("INSERT OR IGNORE INTO users (email, password, name, is_admin) VALUES (?, ?, ?, 1)",
+                ['admin@mogilev.by', hash, 'Администратор']);
+            console.log('✅ Админ создан: admin@mogilev.by / admin2026');
         }
     });
 
-    // Добавление тестовых мест ТОЛЬКО если таблица пустая
+    // Добавление тестовых мест
     db.get("SELECT COUNT(*) as count FROM places", (err, row) => {
         if (!err && row && row.count === 0) {
-            console.log('📝 Добавляем тестовые места...');
             const places = [
                 ['Ратуша Могилева', 'monument', 'ул. Ленинская, 1А', 53.8945, 30.3310, '1679-1681',
                  'Символ магдебургского права, жемчужина архитектуры XVII века.',
-                 'Могилевская ратуша построена в 1679-1681 годах. Это было первое каменное гражданское здание в городе. В 1780 году здесь останавливалась императрица Екатерина II. В 1957 году ратуша была взорвана, восстановлена в 2008 году.',
+                 'Могилевская ратуша построена в 1679-1681 годах...',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Mogilev_Ratusha_1918.jpg/800px-Mogilev_Ratusha_1918.jpg',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Mogilev_Ratusha_2020.jpg/800px-Mogilev_Ratusha_2020.jpg'],
                 
                 ['Собор Трех Святителей', 'monument', 'ул. Первомайская, 75', 53.9002, 30.3325, '1903-1914',
                  'Уникальный храм в неорусском стиле.',
-                 'Строительство собора началось в 1903 году и было завершено в 1914 году. В 1938 году собор был закрыт, в 1989 году храм возвращен верующим.',
+                 'Строительство собора началось в 1903 году...',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Mogilev_Three_Saints_Cathedral_old.jpg/800px-Mogilev_Three_Saints_Cathedral_old.jpg',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mogilev_Three_Saints_Cathedral.jpg/800px-Mogilev_Three_Saints_Cathedral.jpg'],
                 
                 ['Архиерейский дворец', 'monument', 'ул. Комсомольская, 4', 53.8967, 30.3292, '1780',
                  'Бывшая резиденция архиепископа.',
-                 'Дворец построен в 1780 году для Екатерины II. Сегодня здесь находится Могилевский областной краеведческий музей.',
+                 'Дворец построен в 1780 году для Екатерины II...',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Mogilev_Bishop_Palace_old.jpg/800px-Mogilev_Bishop_Palace_old.jpg',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Mogilev_Bishop_Palace.jpg/800px-Mogilev_Bishop_Palace.jpg'],
                 
                 ['Памятник Звездочету', 'monument', 'ул. Ленинская, 22', 53.8938, 30.3330, '2003',
                  'Современный символ Могилева.',
-                 'Памятник установлен в 2003 году. Согласно легенде, если загадать желание и потереть нос звездочету, оно сбудется.',
+                 'Памятник установлен в 2003 году...',
                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mogilev_Astrologer.jpg/800px-Mogilev_Astrologer.jpg'],
                 
                 ['Николаевский монастырь', 'monument', 'ул. Болдина, 5', 53.8985, 30.3278, '1669',
                  'Древний монастырский комплекс.',
-                 'Монастырь основан в 1669 году. Сегодня действующий женский монастырь.',
+                 'Монастырь основан в 1669 году...',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Mogilev_St_Nicholas_Monastery_old.jpg/800px-Mogilev_St_Nicholas_Monastery_old.jpg',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Mogilev_St_Nicholas_Monastery.jpg/800px-Mogilev_St_Nicholas_Monastery.jpg'],
                 
                 ['Ленинская улица', 'street', 'ул. Ленинская', 53.8940, 30.3320, 'XVI век',
                  'Главная пешеходная улица города, исторический центр.',
-                 'Бывшая Замковая улица. Здесь расположены главные достопримечательности Могилева.',
+                 'Бывшая Замковая улица...',
                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mogilev_Astrologer.jpg/800px-Mogilev_Astrologer.jpg'],
                 
                 ['Первомайская улица', 'street', 'ул. Первомайская', 53.8995, 30.3330, 'XIX век',
                  'Одна из старейших улиц Могилева.',
-                 'Проходит через исторический центр. Здесь расположены многие памятники архитектуры.',
+                 'Проходит через исторический центр...',
                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mogilev_Three_Saints_Cathedral.jpg/800px-Mogilev_Three_Saints_Cathedral.jpg']
             ];
@@ -200,14 +153,12 @@ function initDatabase() {
             places.forEach(p => stmt.run(p));
             stmt.finalize();
             console.log('✅ Добавлены тестовые места');
-        } else {
-            console.log(`📊 В базе уже есть ${row?.count || 0} мест`);
         }
     });
 }
 
-// ============ ВСЕ API МАРШРУТЫ (те же самые, что были) ============
-// Регистрация
+// ============ API ============
+
 app.post('/api/register', async (req, res) => {
     const { email, password, name } = req.body;
     if (!email || !password || !name) return res.status(400).json({ error: 'Заполните все поля' });
@@ -225,7 +176,6 @@ app.post('/api/register', async (req, res) => {
     } catch (err) { res.status(500).json({ error: 'Ошибка сервера' }); }
 });
 
-// Вход
 app.post('/api/login', (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) return res.status(400).json({ error: 'Заполните все поля' });
@@ -239,7 +189,6 @@ app.post('/api/login', (req, res) => {
     });
 });
 
-// Получить текущего пользователя
 app.get('/api/me', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Нет токена' });
@@ -250,7 +199,6 @@ app.get('/api/me', (req, res) => {
     });
 });
 
-// Получить все места
 app.get('/api/places', (req, res) => {
     db.all("SELECT * FROM places ORDER BY id", [], (err, rows) => {
         if (err) return res.status(500).json({ error: err.message });
@@ -259,7 +207,6 @@ app.get('/api/places', (req, res) => {
     });
 });
 
-// Получить отзывы
 app.get('/api/reviews', (req, res) => {
     db.all(`
         SELECT r.*, u.name as user_name, u.email as user_email
@@ -272,7 +219,6 @@ app.get('/api/reviews', (req, res) => {
     });
 });
 
-// Добавить отзыв
 app.post('/api/reviews', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -290,7 +236,6 @@ app.post('/api/reviews', (req, res) => {
     });
 });
 
-// Редактировать отзыв
 app.put('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -312,7 +257,6 @@ app.put('/api/reviews/:id', (req, res) => {
     });
 });
 
-// Удалить отзыв
 app.delete('/api/reviews/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -332,7 +276,6 @@ app.delete('/api/reviews/:id', (req, res) => {
     });
 });
 
-// Админ: добавить место
 app.post('/api/admin/places', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -353,7 +296,6 @@ app.post('/api/admin/places', (req, res) => {
     });
 });
 
-// Админ: обновить место
 app.put('/api/admin/places/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -387,7 +329,6 @@ app.put('/api/admin/places/:id', (req, res) => {
     });
 });
 
-// Админ: удалить место
 app.delete('/api/admin/places/:id', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -405,7 +346,6 @@ app.delete('/api/admin/places/:id', (req, res) => {
     });
 });
 
-// Админ: получить логи действий
 app.get('/api/admin/logs', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -426,7 +366,6 @@ app.get('/api/admin/logs', (req, res) => {
     });
 });
 
-// Админ: получить статистику
 app.get('/api/admin/stats', (req, res) => {
     const authHeader = req.headers.authorization;
     if (!authHeader) return res.status(401).json({ error: 'Требуется авторизация' });
@@ -451,44 +390,16 @@ app.get('/api/admin/stats', (req, res) => {
     });
 });
 
-// Выход
 app.post('/api/logout', (req, res) => {
     res.json({ message: 'Выход выполнен' });
-});
-
-// ============ СТАТИЧЕСКИЕ ФАЙЛЫ ============
-const publicPath = path.join(__dirname, 'public');
-if (fs.existsSync(publicPath)) {
-    app.use(express.static(publicPath));
-    console.log('✅ Статика из папки public');
-} else {
-    app.use(express.static(__dirname));
-    console.log('✅ Статика из корня');
-}
-
-// Обработка ошибок
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection:', reason);
 });
 
 // Запуск сервера
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Сервер запущен!`);
-    console.log(`📱 Порт: ${PORT}`);
+    console.log(`📱 Локально: http://localhost:${PORT}`);
     console.log(`🔑 Админ: admin@mogilev.by / admin2026`);
-    console.log(`💾 База данных: ${dbPath}`);
-    console.log(`📁 Директория данных: ${dataDir}`);
-    
-    if (dataDir === '/data') {
-        console.log(`✅ Persistent Disk подключен! Данные будут сохранены.`);
-    } else {
-        console.log(`⚠️ ВНИМАНИЕ: Persistent Disk НЕ подключен!`);
-        console.log(`⚠️ Данные будут потеряны при перезапуске!`);
-        console.log(`⚠️ Добавьте Persistent Disk в Render: Mount Path = /data`);
-    }
-    console.log(``);
+    console.log(`📸 Поддержка base64 изображений включена`);
+    console.log(`💾 База данных сохранена в: ${dbPath}`);
+    console.log(`✏️ Редактирование мест доступно\n`);
 });
