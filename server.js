@@ -12,25 +12,50 @@ const JWT_SECRET = 'mogilev-secret-key-2026';
 
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
-app.use(express.static('public'));
+
+// ============ НАСТРОЙКА СТАТИЧЕСКИХ ФАЙЛОВ ============
+// Проверяем наличие папки public, если нет - используем корень
+const publicDir = path.join(__dirname, 'public');
+if (fs.existsSync(publicDir)) {
+    app.use(express.static(publicDir));
+    console.log('✅ Статика из папки public');
+} else {
+    app.use(express.static(__dirname));
+    console.log('✅ Статика из корня');
+}
 
 // ============ НАСТРОЙКА БАЗЫ ДАННЫХ ============
 let dbPath;
+let dataDir;
+
+// Определяем директорию для базы данных
 if (process.env.RENDER) {
-    const dataDir = '/data';
+    dataDir = '/data';
     if (!fs.existsSync(dataDir)) {
-        fs.mkdirSync(dataDir, { recursive: true });
+        try {
+            fs.mkdirSync(dataDir, { recursive: true });
+        } catch (err) {
+            console.log('Не могу создать /data, используем локальную папку');
+            dataDir = path.join(__dirname, 'data');
+        }
     }
-    dbPath = path.join(dataDir, 'database.sqlite');
-    console.log('✅ Используем постоянное хранилище Render:', dbPath);
 } else {
-    dbPath = path.join(__dirname, 'database.sqlite');
-    console.log('💻 Локальный режим:', dbPath);
+    dataDir = path.join(__dirname, 'data');
 }
 
+// Создаём директорию если её нет
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+}
+
+dbPath = path.join(dataDir, 'database.sqlite');
+console.log('💾 База данных:', dbPath);
+
+// Подключаемся к базе данных
 const db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
         console.error('❌ Ошибка подключения к БД:', err.message);
+        process.exit(1);
     } else {
         console.log('✅ Подключено к SQLite');
         initDatabase();
@@ -108,43 +133,43 @@ function initDatabase() {
             const places = [
                 ['Ратуша Могилева', 'monument', 'ул. Ленинская, 1А', 53.8945, 30.3310, '1679-1681',
                  'Символ магдебургского права, жемчужина архитектуры XVII века.',
-                 'Могилевская ратуша построена в 1679-1681 годах...',
+                 'Могилевская ратуша построена в 1679-1681 годах. Это было первое каменное гражданское здание в городе. В 1780 году здесь останавливалась императрица Екатерина II. В 1957 году ратуша была взорвана, восстановлена в 2008 году.',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Mogilev_Ratusha_1918.jpg/800px-Mogilev_Ratusha_1918.jpg',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Mogilev_Ratusha_2020.jpg/800px-Mogilev_Ratusha_2020.jpg'],
                 
                 ['Собор Трех Святителей', 'monument', 'ул. Первомайская, 75', 53.9002, 30.3325, '1903-1914',
                  'Уникальный храм в неорусском стиле.',
-                 'Строительство собора началось в 1903 году...',
+                 'Строительство собора началось в 1903 году и было завершено в 1914 году. В 1938 году собор был закрыт, в 1989 году храм возвращен верующим.',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/Mogilev_Three_Saints_Cathedral_old.jpg/800px-Mogilev_Three_Saints_Cathedral_old.jpg',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mogilev_Three_Saints_Cathedral.jpg/800px-Mogilev_Three_Saints_Cathedral.jpg'],
                 
                 ['Архиерейский дворец', 'monument', 'ул. Комсомольская, 4', 53.8967, 30.3292, '1780',
                  'Бывшая резиденция архиепископа.',
-                 'Дворец построен в 1780 году для Екатерины II...',
+                 'Дворец построен в 1780 году для Екатерины II. Сегодня здесь находится Могилевский областной краеведческий музей.',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Mogilev_Bishop_Palace_old.jpg/800px-Mogilev_Bishop_Palace_old.jpg',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Mogilev_Bishop_Palace.jpg/800px-Mogilev_Bishop_Palace.jpg'],
                 
                 ['Памятник Звездочету', 'monument', 'ул. Ленинская, 22', 53.8938, 30.3330, '2003',
                  'Современный символ Могилева.',
-                 'Памятник установлен в 2003 году...',
+                 'Памятник установлен в 2003 году. Согласно легенде, если загадать желание и потереть нос звездочету, оно сбудется.',
                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mogilev_Astrologer.jpg/800px-Mogilev_Astrologer.jpg'],
                 
                 ['Николаевский монастырь', 'monument', 'ул. Болдина, 5', 53.8985, 30.3278, '1669',
                  'Древний монастырский комплекс.',
-                 'Монастырь основан в 1669 году...',
+                 'Монастырь основан в 1669 году. Сегодня действующий женский монастырь.',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Mogilev_St_Nicholas_Monastery_old.jpg/800px-Mogilev_St_Nicholas_Monastery_old.jpg',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Mogilev_St_Nicholas_Monastery.jpg/800px-Mogilev_St_Nicholas_Monastery.jpg'],
                 
                 ['Ленинская улица', 'street', 'ул. Ленинская', 53.8940, 30.3320, 'XVI век',
                  'Главная пешеходная улица города, исторический центр.',
-                 'Бывшая Замковая улица...',
+                 'Бывшая Замковая улица. Здесь расположены главные достопримечательности Могилева.',
                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Mogilev_Astrologer.jpg/800px-Mogilev_Astrologer.jpg'],
                 
                 ['Первомайская улица', 'street', 'ул. Первомайская', 53.8995, 30.3330, 'XIX век',
                  'Одна из старейших улиц Могилева.',
-                 'Проходит через исторический центр...',
+                 'Проходит через исторический центр. Здесь расположены многие памятники архитектуры.',
                  'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="400" height="300"%3E%3Crect width="400" height="300" fill="%238b7355"/%3E%3Ctext x="200" y="150" fill="white" text-anchor="middle"%3EФото ТОГДА%3C/text%3E%3C/svg%3E',
                  'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Mogilev_Three_Saints_Cathedral.jpg/800px-Mogilev_Three_Saints_Cathedral.jpg']
             ];
@@ -157,7 +182,7 @@ function initDatabase() {
     });
 }
 
-// ============ API ============
+// ============ API МАРШРУТЫ ============
 
 app.post('/api/register', async (req, res) => {
     const { email, password, name } = req.body;
@@ -394,12 +419,20 @@ app.post('/api/logout', (req, res) => {
     res.json({ message: 'Выход выполнен' });
 });
 
+// Обработка ошибок
+process.on('uncaughtException', (err) => {
+    console.error('Uncaught Exception:', err);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection:', reason);
+});
+
 // Запуск сервера
 app.listen(PORT, '0.0.0.0', () => {
     console.log(`\n🚀 Сервер запущен!`);
-    console.log(`📱 Локально: http://localhost:${PORT}`);
+    console.log(`📱 Порт: ${PORT}`);
     console.log(`🔑 Админ: admin@mogilev.by / admin2026`);
-    console.log(`📸 Поддержка base64 изображений включена`);
-    console.log(`💾 База данных сохранена в: ${dbPath}`);
-    console.log(`✏️ Редактирование мест доступно\n`);
+    console.log(`💾 База данных: ${dbPath}`);
+    console.log(`\n`);
 });
