@@ -18,6 +18,15 @@
             color: #4a3b2c;
             line-height: 1.4;
         }
+
+        /* Анимация для уведомлений */
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
+
         .header {
             background: linear-gradient(135deg, #6b5e3a 0%, #5a4e2e 100%);
             color: white;
@@ -184,7 +193,6 @@
             opacity: 0.9;
         }
 
-        /* Карточка - фото СЕЙЧАС */
         .card-image-container {
             position: relative;
             width: 100%;
@@ -300,7 +308,6 @@
             height: 100%;
         }
 
-        /* Кастомные маркеры */
         .custom-marker {
             background: linear-gradient(135deg, #6b5e3a, #7d6e46);
             border: 2px solid #ffc107;
@@ -321,7 +328,6 @@
             box-shadow: 0 6px 16px rgba(0,0,0,0.3);
         }
 
-        /* Стилизация popup */
         .leaflet-popup-content-wrapper {
             background: white;
             border-radius: 20px;
@@ -1311,6 +1317,33 @@
         let editOldImageQuality = 80;
         let editNewImageQuality = 80;
 
+        // Функция для показа уведомлений
+        function showToast(message, isError = false) {
+            let toast = document.querySelector('.toast-notification');
+            if (toast) toast.remove();
+            
+            toast = document.createElement('div');
+            toast.className = 'toast-notification';
+            toast.textContent = message;
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: ${isError ? '#d9534f' : '#2c3e2f'};
+                color: white;
+                padding: 12px 24px;
+                border-radius: 40px;
+                font-size: 14px;
+                z-index: 9999;
+                animation: fadeInOut 2s ease;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            `;
+            
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
         function filterPlaces(data) {
             return data.filter(p => p.category !== 'building');
         }
@@ -1336,15 +1369,16 @@
         }
 
         async function register(email, password, name) {
-            if (password.length < 6) { alert('Пароль должен быть не менее 6 символов'); return false; }
+            if (password.length < 6) { showToast('Пароль должен быть не менее 6 символов', true); return false; }
             const data = await apiRequest('/api/register', { method: 'POST', body: JSON.stringify({ email, password, name }) });
             if (data && data.token) {
                 localStorage.setItem('token', data.token);
                 authToken = data.token;
                 currentUser = data.user;
                 updateUserUI();
+                showToast('✅ Регистрация успешна!');
                 return true;
-            } else if (data && data.error) alert(data.error);
+            } else if (data && data.error) showToast(data.error, true);
             return false;
         }
 
@@ -1355,8 +1389,9 @@
                 authToken = data.token;
                 currentUser = data.user;
                 updateUserUI();
+                showToast('✅ Вход выполнен!');
                 return true;
-            } else if (data && data.error) alert(data.error);
+            } else if (data && data.error) showToast(data.error, true);
             return false;
         }
 
@@ -1371,10 +1406,11 @@
             userAvatar = null;
             updateUserUI();
             renderCurrentPage();
+            showToast('👋 Вы вышли из аккаунта');
         }
 
         async function requestPasswordReset(email) {
-            alert(`Инструкции по восстановлению пароля отправлены на ${email}`);
+            showToast(`Инструкции отправлены на ${email}`);
             showLoginPage();
         }
 
@@ -1398,9 +1434,12 @@
 
         async function addComment(placeId, text) {
             if (!currentUser) { showLoginPage(); return false; }
-            if (!text.trim()) { alert('Введите текст отзыва!'); return false; }
+            if (!text.trim()) { showToast('Введите текст отзыва!', true); return false; }
             const data = await apiRequest('/api/reviews', { method: 'POST', body: JSON.stringify({ place_id: placeId, text }) });
-            if (data && data.id) { await loadReviews(); return true; }
+            if (data && data.id) { 
+                await loadReviews(); 
+                return true; 
+            }
             return false;
         }
 
@@ -1424,7 +1463,6 @@
             return false;
         }
 
-        // Функция сжатия изображения
         async function compressImage(file, quality) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1493,7 +1531,7 @@
 
         function uploadAvatar() {
             if (!currentUser) {
-                alert('Войдите в аккаунт');
+                showToast('Войдите в аккаунт', true);
                 return;
             }
             const input = document.createElement('input');
@@ -1516,12 +1554,12 @@
                             avatarImg.textContent = '';
                         }
                     }
+                    showToast('✅ Аватар обновлён');
                 }
             };
             input.click();
         }
 
-        // Полноэкранный режим для фото
         function openFullscreen(imageUrl) {
             const modal = document.getElementById('fullscreenModal');
             const img = document.getElementById('fullscreenImage');
@@ -1533,10 +1571,9 @@
             document.getElementById('fullscreenModal').classList.remove('active');
         }
 
-        // Функции для загрузки фото места (только для админа)
         window.uploadOldImage = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
-                alert('Только администратор может загружать фото');
+                showToast('Только администратор может загружать фото', true);
                 return;
             }
             const input = document.createElement('input');
@@ -1558,7 +1595,7 @@
 
         window.uploadNewImage = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
-                alert('Только администратор может загружать фото');
+                showToast('Только администратор может загружать фото', true);
                 return;
             }
             const input = document.createElement('input');
@@ -1578,10 +1615,9 @@
             input.click();
         };
 
-        // Функции для редактирования фото
         window.uploadEditOldImage = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
-                alert('Только администратор может загружать фото');
+                showToast('Только администратор может загружать фото', true);
                 return;
             }
             const input = document.createElement('input');
@@ -1603,7 +1639,7 @@
 
         window.uploadEditNewImage = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
-                alert('Только администратор может загружать фото');
+                showToast('Только администратор может загружать фото', true);
                 return;
             }
             const input = document.createElement('input');
@@ -1661,10 +1697,9 @@
             if (newPreview) newPreview.innerHTML = '';
         }
 
-        // Редактирование места
         window.showEditPlaceModal = async function(placeId) {
             if (!currentUser || currentUser.is_admin !== 1) {
-                alert('Доступ запрещен');
+                showToast('Доступ запрещен', true);
                 return;
             }
             
@@ -1723,7 +1758,7 @@
 
         window.saveEditedPlace = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
-                alert('Доступ запрещен');
+                showToast('Доступ запрещен', true);
                 return;
             }
             
@@ -1737,7 +1772,7 @@
             const full_history = document.getElementById('editHistory')?.value;
             
             if (!name || !address || isNaN(lat) || isNaN(lng)) {
-                alert('Заполните название, адрес и координаты!');
+                showToast('Заполните название, адрес и координаты!', true);
                 return;
             }
             
@@ -1753,9 +1788,9 @@
                 await loadPlaces();
                 clearEditImagePreviews();
                 closeEditModal();
-                alert('Место обновлено!');
+                showToast('✅ Место обновлено!');
             } else if (data && data.error) {
-                alert(data.error);
+                showToast(data.error, true);
             }
         };
 
@@ -1898,7 +1933,7 @@
             const email = document.getElementById('regEmailPage').value;
             const password = document.getElementById('regPasswordPage').value;
             const confirm = document.getElementById('regConfirmPasswordPage').value;
-            if (password !== confirm) { alert('Пароли не совпадают'); return; }
+            if (password !== confirm) { showToast('Пароли не совпадают', true); return; }
             if (await register(email, password, name)) {
                 goBackToMain();
             }
@@ -1906,7 +1941,7 @@
 
         async function submitResetPassword() {
             const email = document.getElementById('resetEmailPage').value;
-            if (!email) { alert('Введите email'); return; }
+            if (!email) { showToast('Введите email', true); return; }
             await requestPasswordReset(email);
         }
 
@@ -1961,7 +1996,6 @@
             if (!grid) return;
             if (!placesData.length) { grid.innerHTML = '<div style="text-align:center; padding:40px;">Загрузка...</div>'; return; }
             grid.innerHTML = placesData.map(place => {
-                const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
                 return `
                     <div class="place-card">
                         <div class="place-card-header">
@@ -1984,12 +2018,73 @@
             }).join('');
         }
 
+        // Обновление секции комментариев без перезагрузки страницы
+        function updateCommentsSection(placeId) {
+            const place = placesData.find(p => p.id === placeId);
+            if (!place) return;
+            
+            const placeReviews = reviews.filter(r => r.place_id === placeId && !r.parent_id);
+            const isLoggedIn = !!currentUser;
+            
+            const commentFormHtml = isLoggedIn ? `
+                <div class="comment-form">
+                    <textarea id="detailCommentText_${place.id}" placeholder="Поделитесь впечатлениями..."></textarea>
+                    <button class="comment-submit" onclick="submitDetailComment(${place.id})">📝 Отправить отзыв</button>
+                </div>
+            ` : `
+                <div class="comment-form" style="text-align:center; background:#faf6ed; padding:20px; border-radius:16px;">
+                    <p>🔒 Чтобы оставить отзыв, <a href="#" onclick="showLoginPage(); return false;">войдите</a> или <a href="#" onclick="showRegisterPage(); return false;">зарегистрируйтесь</a>.</p>
+                </div>
+            `;
+            
+            const commentsHtml = `
+                <div class="comments-section">
+                    <div class="comments-title">💬 Отзывы (${placeReviews.length})</div>
+                    ${commentFormHtml}
+                    <div class="comments-list" id="commentsList">
+                        ${placeReviews.length === 0 ? '<div style="text-align:center; padding:30px;">✨ Пока нет отзывов</div>' : 
+                            placeReviews.slice().reverse().map(review => {
+                                const replies = reviews.filter(r => r.parent_id === review.id);
+                                const isOwner = currentUser && review.user_id === currentUser.id;
+                                const isAdmin = currentUser && currentUser.is_admin === 1;
+                                return `
+                                    <div class="comment-item" id="comment-${review.id}">
+                                        <div class="comment-header">
+                                            <div><span class="comment-author">${escapeHtml(review.user_name)}</span></div>
+                                            <div class="comment-date">${formatDate(review.created_at)}</div>
+                                        </div>
+                                        <div class="comment-text">${escapeHtml(review.text)}${review.edited ? ' <span style="font-size:0.6em;">(ред.)</span>' : ''}</div>
+                                        <div class="comment-actions">
+                                            <button class="comment-btn" onclick="showReplyForm(${review.id})">💬 Ответить</button>
+                                            ${(isOwner || isAdmin) ? `<button class="comment-btn" onclick="editCommentPrompt(${review.id})">✏️ Ред.</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${review.id})">🗑️ Удалить</button>` : ''}
+                                        </div>
+                                        <div id="replyForm-${review.id}" class="reply-form">
+                                            <textarea id="replyText-${review.id}" placeholder="Ваш ответ..."></textarea>
+                                            <button class="comment-submit" onclick="submitReply(${review.id})">Ответить</button>
+                                        </div>
+                                        ${replies.length ? `<div class="replies">${replies.map(r => `<div class="reply-item"><strong>↳ ${escapeHtml(r.user_name)}</strong><div>${escapeHtml(r.text)}</div><div class="comment-date">${formatDate(r.created_at)}</div>${(currentUser && (r.user_id === currentUser.id || currentUser.is_admin === 1)) ? `<div><button class="comment-btn" onclick="editCommentPrompt(${r.id})">✏️</button><button class="comment-btn delete-btn" onclick="deleteCommentPrompt(${r.id})">🗑️</button></div>` : ''}</div>`).join('')}</div>` : ''}
+                                    </div>
+                                `;
+                            }).join('')
+                        }
+                    </div>
+                </div>
+            `;
+            
+            const existingSection = document.querySelector('.comments-section');
+            if (existingSection) {
+                existingSection.outerHTML = commentsHtml;
+            }
+        }
+
         window.showDetailPage = function(placeId) {
             const place = placesData.find(p => p.id === placeId);
             if (!place) return;
             currentPlaceId = placeId;
+            
             const placeReviews = reviews.filter(r => r.place_id === placeId && !r.parent_id);
             const isLoggedIn = !!currentUser;
+            
             const commentFormHtml = isLoggedIn ? `
                 <div class="comment-form">
                     <textarea id="detailCommentText_${place.id}" placeholder="Поделитесь впечатлениями..."></textarea>
@@ -2063,30 +2158,76 @@
         };
 
         async function submitDetailComment(placeId) {
-            const text = document.getElementById(`detailCommentText_${placeId}`).value;
+            const textarea = document.getElementById(`detailCommentText_${placeId}`);
+            if (!textarea) return;
+            const text = textarea.value;
+            
+            if (!text.trim()) {
+                showToast('Введите текст отзыва!', true);
+                return;
+            }
+            
             if (await addComment(placeId, text)) {
-                document.getElementById(`detailCommentText_${placeId}`).value = '';
-                showDetailPage(placeId);
+                textarea.value = '';
+                await loadReviews();
+                updateCommentsSection(placeId);
+                showToast('✅ Отзыв добавлен!');
             }
         }
 
-        function showReplyForm(commentId) { const form = document.getElementById(`replyForm-${commentId}`); if (form) form.classList.toggle('active'); }
+        function showReplyForm(commentId) { 
+            const form = document.getElementById(`replyForm-${commentId}`); 
+            if (form) form.classList.toggle('active'); 
+        }
+        
         async function submitReply(parentId) {
-            const text = document.getElementById(`replyText-${parentId}`).value;
+            const textarea = document.getElementById(`replyText-${parentId}`);
+            if (!textarea) return;
+            const text = textarea.value;
+            
+            if (!text.trim()) {
+                showToast('Введите текст ответа!', true);
+                return;
+            }
+            
             if (await addReply(parentId, text)) {
-                document.getElementById(`replyText-${parentId}`).value = '';
+                textarea.value = '';
                 document.getElementById(`replyForm-${parentId}`).classList.remove('active');
-                showDetailPage(currentPlaceId);
+                await loadReviews();
+                if (currentPlaceId) {
+                    updateCommentsSection(currentPlaceId);
+                }
+                showToast('✅ Ответ добавлен!');
             }
         }
+        
         async function editCommentPrompt(id) {
             const comment = reviews.find(r => r.id === id);
+            if (!comment) return;
             const newText = prompt('Редактировать отзыв:', comment.text);
-            if (newText && newText.trim()) await editComment(id, newText);
+            if (newText && newText.trim()) {
+                if (await editComment(id, newText)) {
+                    await loadReviews();
+                    if (currentPlaceId) {
+                        updateCommentsSection(currentPlaceId);
+                    }
+                    showToast('✏️ Отзыв отредактирован');
+                }
+            }
         }
+        
         async function deleteCommentPrompt(id) {
-            if (confirm('Удалить отзыв?')) await deleteComment(id);
+            if (confirm('Удалить отзыв?')) {
+                if (await deleteComment(id)) {
+                    await loadReviews();
+                    if (currentPlaceId) {
+                        updateCommentsSection(currentPlaceId);
+                    }
+                    showToast('🗑️ Отзыв удалён');
+                }
+            }
         }
+        
         function goBackToMain() { renderMainPageView(); }
 
         function renderCategoryPage(category) {
@@ -2096,7 +2237,6 @@
             const names = { monument: '🏛️ Памятники', street: '🛣️ Улицы' };
             grid.innerHTML = `<div style="font-size:1.3em; color:#6b5e3a; margin-bottom:20px;">${names[category]}</div>` +
                 filtered.map(place => {
-                    const placeReviews = reviews.filter(r => r.place_id === place.id && !r.parent_id);
                     return `
                         <div class="place-card">
                             <div class="place-card-header">
@@ -2145,10 +2285,9 @@
             }
         }
 
-        // Админ-панель
         window.showAdminPanel = async function() {
             if (!currentUser || currentUser.is_admin !== 1) { 
-                alert('Доступ запрещен. Только для администратора'); 
+                showToast('Доступ запрещен. Только для администратора', true);
                 return; 
             }
             
@@ -2248,7 +2387,7 @@
 
         window.adminAddPlace = async function() {
             if (!currentUser || currentUser.is_admin !== 1) {
-                alert('Доступ запрещен');
+                showToast('Доступ запрещен', true);
                 return;
             }
             
@@ -2264,7 +2403,7 @@
             const new_image = selectedNewImage || '';
             
             if (!name || !address || isNaN(lat) || isNaN(lng)) { 
-                alert('Заполните название, адрес и координаты!'); 
+                showToast('Заполните название, адрес и координаты!', true);
                 return; 
             }
             
@@ -2279,7 +2418,7 @@
                 await loadLogs();
                 renderLogsList();
                 clearImagePreviews();
-                alert('Место добавлено!'); 
+                showToast('✅ Место добавлено!'); 
                 document.getElementById('newName').value = '';
                 document.getElementById('newAddress').value = '';
                 document.getElementById('newLat').value = '';
@@ -2293,12 +2432,12 @@
                 const newSlider = document.getElementById('newQualityValue');
                 if (oldSlider) oldSlider.textContent = '80';
                 if (newSlider) newSlider.textContent = '80';
-            } else if (data && data.error) alert(data.error);
+            } else if (data && data.error) showToast(data.error, true);
         };
 
         window.adminDeletePlace = async function(id) {
             if (!currentUser || currentUser.is_admin !== 1) {
-                alert('Доступ запрещен');
+                showToast('Доступ запрещен', true);
                 return;
             }
             if (confirm('Удалить место?')) {
@@ -2308,7 +2447,7 @@
                     renderPlacesList(); 
                     await loadLogs();
                     renderLogsList();
-                    alert('Место удалено'); 
+                    showToast('✅ Место удалено'); 
                 }
             }
         };
@@ -2352,6 +2491,7 @@
         window.openFullscreen = openFullscreen;
         window.closeFullscreen = closeFullscreen;
         window.logout = logout;
+        window.updateCommentsSection = updateCommentsSection;
 
         document.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', (e) => {
