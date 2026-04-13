@@ -19,7 +19,6 @@
             line-height: 1.4;
         }
 
-        /* Анимация для уведомлений */
         @keyframes fadeInOut {
             0% { opacity: 0; transform: translateX(-50%) translateY(20px); }
             15% { opacity: 1; transform: translateX(-50%) translateY(0); }
@@ -1306,7 +1305,6 @@
         let currentPlaceId = null;
         let userAvatar = localStorage.getItem('userAvatar') || null;
         
-        // Переменные для загрузки фото
         let selectedOldImage = null;
         let selectedNewImage = null;
         let editSelectedOldImage = null;
@@ -1317,7 +1315,6 @@
         let editOldImageQuality = 80;
         let editNewImageQuality = 80;
 
-        // Функция для показа уведомлений
         function showToast(message, isError = false) {
             let toast = document.querySelector('.toast-notification');
             if (toast) toast.remove();
@@ -1422,14 +1419,18 @@
             }
         }
 
-        async function loadReviews() {
+        // ============ ОСНОВНЫЕ ФУНКЦИИ С СОХРАНЕНИЕМ ПОЗИЦИИ ============
+        
+        async function loadReviews(keepPosition = false) {
             const data = await apiRequest('/api/reviews');
-            if (data && !data.error) { reviews = data; renderCurrentPage(); }
-        }
-
-        async function loadLogs() {
-            const data = await apiRequest('/api/admin/logs');
-            if (data && !data.error) { logs = data; }
+            if (data && !data.error) { 
+                reviews = data;
+                if (keepPosition && currentPlaceId) {
+                    updateCommentsSection(currentPlaceId);
+                } else if (!keepPosition) {
+                    renderCurrentPage();
+                }
+            }
         }
 
         async function addComment(placeId, text) {
@@ -1437,7 +1438,8 @@
             if (!text.trim()) { showToast('Введите текст отзыва!', true); return false; }
             const data = await apiRequest('/api/reviews', { method: 'POST', body: JSON.stringify({ place_id: placeId, text }) });
             if (data && data.id) { 
-                await loadReviews(); 
+                await loadReviews(true);
+                showToast('✅ Отзыв добавлен!');
                 return true; 
             }
             return false;
@@ -1445,21 +1447,33 @@
 
         async function addReply(parentId, text) {
             if (!currentUser) { showLoginPage(); return false; }
-            if (!text.trim()) return false;
+            if (!text.trim()) { showToast('Введите текст ответа!', true); return false; }
             const data = await apiRequest('/api/reviews', { method: 'POST', body: JSON.stringify({ text, parent_id: parentId }) });
-            if (data && data.id) { await loadReviews(); return true; }
+            if (data && data.id) { 
+                await loadReviews(true);
+                showToast('✅ Ответ добавлен!');
+                return true; 
+            }
             return false;
         }
 
         async function editComment(id, newText) {
             const data = await apiRequest(`/api/reviews/${id}`, { method: 'PUT', body: JSON.stringify({ text: newText }) });
-            if (data && data.message) { await loadReviews(); return true; }
+            if (data && data.message) { 
+                await loadReviews(true);
+                showToast('✏️ Отзыв отредактирован');
+                return true; 
+            }
             return false;
         }
 
         async function deleteComment(id) {
             const data = await apiRequest(`/api/reviews/${id}`, { method: 'DELETE' });
-            if (data && data.message) { await loadReviews(); return true; }
+            if (data && data.message) { 
+                await loadReviews(true);
+                showToast('🗑️ Отзыв удалён');
+                return true; 
+            }
             return false;
         }
 
@@ -2018,7 +2032,6 @@
             }).join('');
         }
 
-        // Обновление секции комментариев без перезагрузки страницы
         function updateCommentsSection(placeId) {
             const place = placesData.find(p => p.id === placeId);
             if (!place) return;
@@ -2169,8 +2182,6 @@
             
             if (await addComment(placeId, text)) {
                 textarea.value = '';
-                await loadReviews();
-                updateCommentsSection(placeId);
                 showToast('✅ Отзыв добавлен!');
             }
         }
@@ -2193,10 +2204,6 @@
             if (await addReply(parentId, text)) {
                 textarea.value = '';
                 document.getElementById(`replyForm-${parentId}`).classList.remove('active');
-                await loadReviews();
-                if (currentPlaceId) {
-                    updateCommentsSection(currentPlaceId);
-                }
                 showToast('✅ Ответ добавлен!');
             }
         }
@@ -2207,10 +2214,6 @@
             const newText = prompt('Редактировать отзыв:', comment.text);
             if (newText && newText.trim()) {
                 if (await editComment(id, newText)) {
-                    await loadReviews();
-                    if (currentPlaceId) {
-                        updateCommentsSection(currentPlaceId);
-                    }
                     showToast('✏️ Отзыв отредактирован');
                 }
             }
@@ -2219,10 +2222,6 @@
         async function deleteCommentPrompt(id) {
             if (confirm('Удалить отзыв?')) {
                 if (await deleteComment(id)) {
-                    await loadReviews();
-                    if (currentPlaceId) {
-                        updateCommentsSection(currentPlaceId);
-                    }
                     showToast('🗑️ Отзыв удалён');
                 }
             }
@@ -2358,6 +2357,11 @@
                 });
             });
         };
+        
+        async function loadLogs() {
+            const data = await apiRequest('/api/admin/logs');
+            if (data && !data.error) { logs = data; }
+        }
         
         function renderLogsList() {
             const container = document.getElementById('logsList');
