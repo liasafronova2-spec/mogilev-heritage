@@ -155,6 +155,39 @@
             padding: 20px 16px;
         }
 
+        /* ========== СТИЛИ ДЛЯ ПОИСКА ========== */
+        .search-container {
+            margin: 20px 0 30px 0;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 14px 24px;
+            border: 2px solid #d4c4a8;
+            border-radius: 50px;
+            font-size: 16px;
+            background: white;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: #6b5e3a;
+            box-shadow: 0 0 0 3px rgba(107,94,58,0.1);
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #6b5e3a;
+            font-size: 1.1em;
+            background: #fef9f0;
+            border-radius: 24px;
+            margin: 20px 0;
+        }
+        /* ========== КОНЕЦ СТИЛЕЙ ПОИСКА ========== */
+
         .places-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -2004,6 +2037,71 @@
         function formatDate(date) { const d = new Date(date); return `${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}`; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
+        // ========== ФУНКЦИЯ ПОИСКА ==========
+        let searchTimeout = null;
+        
+        function initSearch() {
+            // Создаём поле поиска, если его нет
+            let searchContainer = document.querySelector('.search-container');
+            if (!searchContainer) {
+                const container = document.getElementById('app');
+                if (container && !container.querySelector('.search-container')) {
+                    const searchHtml = `
+                        <div class="search-container">
+                            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск по названию места (например, Ратуша, Собор, улица...)" autocomplete="off">
+                        </div>
+                    `;
+                    container.insertAdjacentHTML('afterbegin', searchHtml);
+                }
+            }
+            
+            const searchInput = document.getElementById('searchInput');
+            if (!searchInput) return;
+            
+            // Удаляем старый обработчик, чтобы не дублировать
+            const newSearchInput = searchInput.cloneNode(true);
+            searchInput.parentNode.replaceChild(newSearchInput, searchInput);
+            
+            newSearchInput.addEventListener('input', function(e) {
+                const query = e.target.value.toLowerCase().trim();
+                const cards = document.querySelectorAll('.place-card');
+                const placesGrid = document.querySelector('.places-grid');
+                
+                // Удаляем старое сообщение "не найдено"
+                let oldNoResults = document.querySelector('.no-results');
+                if (oldNoResults) oldNoResults.remove();
+                
+                if (cards.length === 0) return;
+                
+                let visibleCount = 0;
+                
+                cards.forEach(card => {
+                    // Ищем название места в .place-card-header h3
+                    const titleElement = card.querySelector('.place-card-header h3');
+                    const title = titleElement ? titleElement.innerText.toLowerCase() : '';
+                    
+                    if (query === '' || title.includes(query)) {
+                        card.style.display = '';
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+                
+                // Показываем сообщение, если ничего не найдено
+                if (visibleCount === 0 && query !== '') {
+                    const noResultsMsg = document.createElement('div');
+                    noResultsMsg.className = 'no-results';
+                    noResultsMsg.innerHTML = `🔍 По запросу «${e.target.value}» ничего не найдено. Попробуйте изменить поисковый запрос.`;
+                    if (placesGrid) {
+                        placesGrid.parentNode.insertBefore(noResultsMsg, placesGrid);
+                    } else {
+                        document.getElementById('app')?.appendChild(noResultsMsg);
+                    }
+                }
+            });
+        }
+
         function renderMainPage() {
             const grid = document.getElementById('placesGrid');
             if (!grid) return;
@@ -2029,6 +2127,11 @@
                     </div>
                 `;
             }).join('');
+            
+            // Инициализируем поиск после отрисовки карточек
+            setTimeout(() => {
+                initSearch();
+            }, 100);
         }
 
         function updateCommentsSection(placeId) {
@@ -2255,6 +2358,11 @@
                         </div>
                     `;
                 }).join('');
+            
+            // Инициализируем поиск после отрисовки карточек
+            setTimeout(() => {
+                initSearch();
+            }, 100);
         }
 
         function renderMainPageView() {
