@@ -157,7 +157,7 @@
 
         /* ========== СТИЛИ ДЛЯ ПОИСКА ========== */
         .search-container {
-            margin: 20px 0 30px 0;
+            margin: 0 0 30px 0;
         }
         
         .search-input {
@@ -177,7 +177,7 @@
             box-shadow: 0 0 0 3px rgba(107,94,58,0.1);
         }
         
-        .no-results {
+        .no-results-message {
             text-align: center;
             padding: 40px;
             color: #6b5e3a;
@@ -2037,38 +2037,41 @@
         function formatDate(date) { const d = new Date(date); return `${d.toLocaleDateString('ru-RU')} ${d.toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' })}`; }
         function escapeHtml(text) { if (!text) return ''; const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
 
-        // ========== ФУНКЦИЯ ПОИСКА ==========
-        let searchTimeout = null;
-        
+        // ========== ФУНКЦИЯ ПОИСКА (РАБОТАЕТ НА ВСЕХ СТРАНИЦАХ) ==========
         function initSearch() {
-            // Создаём поле поиска, если его нет
-            let searchContainer = document.querySelector('.search-container');
+            const app = document.getElementById('app');
+            if (!app) return;
+            
+            let searchContainer = document.getElementById('globalSearchContainer');
             if (!searchContainer) {
-                const container = document.getElementById('app');
-                if (container && !container.querySelector('.search-container')) {
-                    const searchHtml = `
-                        <div class="search-container">
-                            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Поиск по названию места (например, Ратуша, Собор, улица...)" autocomplete="off">
-                        </div>
-                    `;
-                    container.insertAdjacentHTML('afterbegin', searchHtml);
-                }
+                searchContainer = document.createElement('div');
+                searchContainer.id = 'globalSearchContainer';
+                searchContainer.className = 'search-container';
+                searchContainer.innerHTML = `
+                    <input type="text" id="globalSearchInput" class="search-input" 
+                           placeholder="🔍 Поиск по названию места (например, Ратуша, Собор, улица...)" 
+                           autocomplete="off">
+                `;
+                // Вставляем в начало #app
+                app.insertBefore(searchContainer, app.firstChild);
             }
             
-            const searchInput = document.getElementById('searchInput');
+            const searchInput = document.getElementById('globalSearchInput');
             if (!searchInput) return;
             
-            // Удаляем старый обработчик, чтобы не дублировать
+            // Убираем старый обработчик, чтобы не дублировать
             const newSearchInput = searchInput.cloneNode(true);
             searchInput.parentNode.replaceChild(newSearchInput, searchInput);
             
             newSearchInput.addEventListener('input', function(e) {
                 const query = e.target.value.toLowerCase().trim();
+                
+                // Ищем карточки на странице
                 const cards = document.querySelectorAll('.place-card');
                 const placesGrid = document.querySelector('.places-grid');
                 
                 // Удаляем старое сообщение "не найдено"
-                let oldNoResults = document.querySelector('.no-results');
+                let oldNoResults = document.querySelector('.no-results-message');
                 if (oldNoResults) oldNoResults.remove();
                 
                 if (cards.length === 0) return;
@@ -2076,7 +2079,6 @@
                 let visibleCount = 0;
                 
                 cards.forEach(card => {
-                    // Ищем название места в .place-card-header h3
                     const titleElement = card.querySelector('.place-card-header h3');
                     const title = titleElement ? titleElement.innerText.toLowerCase() : '';
                     
@@ -2091,12 +2093,12 @@
                 // Показываем сообщение, если ничего не найдено
                 if (visibleCount === 0 && query !== '') {
                     const noResultsMsg = document.createElement('div');
-                    noResultsMsg.className = 'no-results';
+                    noResultsMsg.className = 'no-results-message';
                     noResultsMsg.innerHTML = `🔍 По запросу «${e.target.value}» ничего не найдено. Попробуйте изменить поисковый запрос.`;
                     if (placesGrid) {
                         placesGrid.parentNode.insertBefore(noResultsMsg, placesGrid);
                     } else {
-                        document.getElementById('app')?.appendChild(noResultsMsg);
+                        app.appendChild(noResultsMsg);
                     }
                 }
             });
@@ -2127,11 +2129,6 @@
                     </div>
                 `;
             }).join('');
-            
-            // Инициализируем поиск после отрисовки карточек
-            setTimeout(() => {
-                initSearch();
-            }, 100);
         }
 
         function updateCommentsSection(placeId) {
@@ -2358,11 +2355,6 @@
                         </div>
                     `;
                 }).join('');
-            
-            // Инициализируем поиск после отрисовки карточек
-            setTimeout(() => {
-                initSearch();
-            }, 100);
         }
 
         function renderMainPageView() {
@@ -2389,6 +2381,8 @@
                 renderCategoryPage('street');
                 initMap();
             }
+            // Инициализируем поиск после загрузки любой страницы
+            setTimeout(() => { initSearch(); }, 100);
         }
 
         window.showAdminPanel = async function() {
